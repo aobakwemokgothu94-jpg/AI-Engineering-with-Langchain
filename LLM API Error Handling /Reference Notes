@@ -1,0 +1,61 @@
+LLM API Error Handling Reference Notes
+A comprehensive guide to identifying, understanding, and mitigating the six most common code-level API errors encountered when developing robust LLM and AI applications.
+
+Quick Reference: Common LLM API Errors
+Error Code & Type	Primary Cause	Recommended Solution / Mitigation
+Rate Limits (429)	Sending too many requests in a short time.	Implement exponential backoff with jitter; reduce request frequency; spread load across keys or upgrade tier.
+Timeout (504)	Processing took longer than the allowed time limit.	Reduce input payload size; simplify prompts; increase timeout and max_retries parameters in LangChain.
+Invalid Requests (400, 413)	The request is malformed, missing fields, or exceeds size limits.	Validate and sanitize all incoming payloads prior to transmission (e.g., using Pydantic models).
+Content Policy (400)	Input or output violates the provider's safety/moderation rules.	Review provider policies, filter input text before submission, and adjust prompt wording.
+Quota Exceeded (429)	Account usage limit reached or credits ran out.	Upgrade plan, configure auto-recharge, and establish real-time usage/spending alerts.
+Server Overload (503, 529)	The provider's servers are busy, overwhelmed, or experiencing downtime.	Check the provider status page, retry with backoff, or degrade gracefully with fallback providers/responses.
+Detailed Breakdown & Mitigation Strategies
+1. Rate Limits (429)
+What it means: Your application is firing requests too rapidly, breaching the provider's threshold for your current tier.
+
+Mitigation Strategies:
+
+Exponential Backoff & Jitter: Automatically pause and retry failed requests with progressively longer waiting periods randomized with jitter to prevent simultaneous retry spikes.
+
+Load Management: Spread your request volume across multiple API keys or throttle frequency.
+
+Scaling: Upgrade to a higher subscription tier if hitting caps consistently during normal business operations.
+
+2. Timeout (504)
+What it means: The model took too long to generate the response or handle the input context window before the connection dropped.
+
+Mitigation Strategies:
+
+Payload Optimization: Reduce input sizes, truncate unnecessary history, or simplify complex multi-step prompts.
+
+Parameter Adjustment: Explicitly raise timeout thresholds using the timeout and max_retries configurations within LangChain.
+
+3. Invalid Requests (400, 413)
+What it means: The API rejected the request because fields were missing, malformed, or the payload size exceeded limits.
+
+Mitigation Strategies:
+
+Pre-Flight Validation: Use validation frameworks (like Pydantic) to inspect and reject malformed schemas before spending tokens or hitting the API network layer.
+
+4. Content Policy (400)
+What it means: The prompt text or generated output triggered the provider's safety, privacy, or content moderation guardrails.
+
+Mitigation Strategies:
+
+Content Filtering: Review provider constraints, sanitize inputs, and strip out potentially triggering keywords or unsafe phrases prior to submission.
+
+5. Quota Exceeded (429)
+What it means: Your organization has depleted its pre-paid credits or monthly billing cap.
+
+Mitigation Strategies:
+
+Billing Automation: Set up auto-recharge settings and proactive usage alerts.
+
+Budget Management: Monitor token usage per request and enforce user-level rate limits or spending caps.
+
+6. Server Overload (503, 529)
+What it means: The LLM provider's infrastructure is experiencing high traffic or an active outage.
+
+Mitigation Strategies:
+
+Graceful Degradation: Wrap critical LLM execution calls inside try/except blocks to catch outages cleanly. Provide user-friendly fallback messaging, switch to a smaller backup model, or route requests to a secondary fallback provider.
