@@ -1,0 +1,94 @@
+Firewall Log Triage Engine (Port Scan Analysis)
+A specialized test case report demonstrating the application's ability to generalize across different security log formats, successfully handling wide-scope attacks like port sweeps where specific target ports and destination IPs are absent.
+
+Features Tested
+Dynamic Threat Categorization: Automatically classifies broader attack patterns (e.g., rapid SYN packets) as Port Scan with Critical severity.
+
+Optional Field Resiliency: Gracefully manages missing target metadata (such as destination_ip and port) by assigning None via Pydantic's Optional type annotations.
+
+Contextual Triage Actions: Generates tailored incident response recommendations based on the specific threat profile.
+
+Project Code:
+
+from langchain.chat_models import init_chat_model
+from pydantic import BaseModel, Field
+from typing import Optional
+from devtools import pprint
+import openai
+
+# 1. Define Pydantic Models for Firewall Triage
+class IndicatorModel(BaseModel):
+    source_ip: Optional[str] = Field(default=None, description="Source IP address of the traffic")
+    destination_ip: Optional[str] = Field(default=None, description="Destination IP address of the traffic")
+    port: Optional[int] = Field(default=None, description="Target network port")
+
+
+class FirewallTriageReport(BaseModel):
+    log_id: str = Field(description="Unique identifier for the log entry", pattern=r"^LOG\d{5}$")
+    severity: str = Field(description="Categorized severity level: Low, Medium, High, or Critical")
+    event_category: str = Field(description="Classification of the threat or activity (e.g., Brute-Force, Port Scan)")
+    indicators: IndicatorModel = Field(description="Technical indicators extracted from the log")
+    recommended_action: str = Field(description="Suggested security triage step")
+
+
+# 2. Initialize the Chat Model
+llm = init_chat_model(model="gpt-6-luna", temperature=0, reasoning_effort="none", model_provider="openai")
+
+# 3. Create Structured LLM
+structured_llm = llm.with_structured_output(FirewallTriageReport)
+
+# 4. Sample Raw Log Input (Port Scan Example)
+raw_log_input = """
+log_id: LOG12346
+timestamp: 2026-10-24T22:18:30Z
+raw_log_text: [CRITICAL] Port Scan Detected: Rapid SYN packets sent from 10.0.5.99 across ports 1-1024 on gateway firewall.
+"""
+
+prompt = f"Analyze this firewall log entry and extract the structured triage data:\n{raw_log_input}"
+
+# 5. Invoke and Handle Errors
+try:
+    print("Sending log entry to structured LLM for analysis...")
+    triage_result = structured_llm.invoke(prompt)
+    
+    print("\n--- Triage Result Successfully Extracted ---")
+    pprint(triage_result)
+    
+    # Direct field access demonstration
+    print(f"\nLog ID: {triage_result.log_id}")
+    print(f"Severity: {triage_result.severity}")
+    print(f"Event Category: {triage_result.event_category}")
+    print(f"Recommended Action: {triage_result.recommended_action}")
+
+except openai.APITimeoutError as e:
+    print(f"Error: Request timed out (504). {e}")
+except openai.RateLimitError as e:
+    print(f"Error: Rate limit or quota exceeded (429). {e}")
+except openai.BadRequestError as e:
+    print(f"Error: Invalid request or content policy violation (400). {e}")
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+
+Execution preview / Output
+
+Sending log entry to structured LLM for analysis...
+
+--- Triage Result Successfully Extracted ---
+FirewallTriageReport(
+    log_id='LOG12346',
+    severity='Critical',
+    event_category='Port Scan',
+    indicators=IndicatorModel(
+        source_ip='10.0.5.99',
+        destination_ip=None,
+        port=None,
+    ),
+    recommended_action=(
+        'Investigate the source host and review firewall logs for targeted services; block or isolate the source if the scan is unauthorized.'
+    ),
+)
+
+Log ID: LOG12346
+Severity: Critical
+Event Category: Port Scan
+Recommended Action: Investigate the source host and review firewall logs for targeted services; block or isolate the source if the scan is unauthorized.
