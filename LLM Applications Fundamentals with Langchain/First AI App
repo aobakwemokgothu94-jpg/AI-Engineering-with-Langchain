@@ -1,0 +1,97 @@
+ First AI App
+
+Welcome to the first lesson on building LLM (Large Language Model) applications. This project demonstrates the core architecture of an AI application using **LangChain**, covering prompt management, model initialization, and secure API key handling.
+
+## 🏗️ LLM Application Architecture
+
+Most LLM applications rely on three core components:
+*   **User Interface:** The front-facing layer where users input data and view generated responses.
+*   **Application Logic:** The bridge that constructs prompts, communicates with the LLM via APIs, and processes the incoming responses.
+*   **LLM Provider:** The external service (e.g., OpenAI, Anthropic) that processes the prompts and generates the text.
+
+---
+
+## 🛠️ Key Concepts & Frameworks
+
+### LangChain
+LangChain is the industry-standard framework for building LLM applications. It offers:
+*   **Development Speed:** Ready-to-use, modular pre-built components.
+*   **Provider Abstraction:** Easily switch between underlying LLM providers (e.g., OpenAI to Anthropic) without rewriting core logic.
+*   **Community Support:** A highly active open-source ecosystem.
+
+### Prompt Templates
+Prompt templates allow you to build reusable prompt strings with dynamic variables replaced at runtime.
+```python
+from langchain_core.prompts import PromptTemplate
+
+# Define template with placeholders
+prompt_template_str = "Translate the following text to French: {input_text}"
+prompt_template = PromptTemplate.from_template(prompt_template_str)
+
+# Inject variables at runtime
+prompt = prompt_template.format(input_text="Hello, how are you?")
+```
+
+### Model Interface
+Initialize your model and invoke it dynamically via LangChain's standardized interface.
+```python
+from langchain.chat_models import init_chat_model
+
+# Initialize the model interface
+model = init_chat_model("gpt-6-luna", model_provider="openai")
+
+# Invoke the model with your formatted prompt
+response = model.invoke(prompt)
+print(response.text)
+```
+
+---
+
+## 🔒 API Key Management & Security
+
+Security is critical when dealing with external AI providers. **Never hardcode API keys directly into your codebase.**
+
+1. Store keys safely in a localized environment file (`.env`):
+   ```env
+   OPENAI_API_KEY=your_actual_api_key_here
+   ```
+2. Load the variables using `python-dotenv`:
+   ```python
+   from dotenv import load_dotenv
+   load_dotenv()
+   ```
+3. LangChain automatically detects provider-specific variables like `OPENAI_API_KEY` from your environment.
+4. Always ensure your `.env` file is explicitly added to your `.gitignore` to avoid accidental exposure on GitHub.
+
+---
+
+## 🚀 Quick Start / Preview
+
+### 1. Installation
+```bash
+pip install langchain python-dotenv
+```
+
+### 2. Implementation Sample
+Create an `app.py` file with the following complete workflow:
+
+```python
+from dotenv import load_dotenv
+from langchain_core.prompts import PromptTemplate
+from langchain.chat_models import init_chat_model
+
+# 1. Load sensitive environment variables
+load_dotenv()
+
+# 2. Setup the prompt structure
+prompt_template_str = "Give me a 1-sentence summary about {topic}."
+prompt_template = PromptTemplate.from_template(prompt_template_str)
+final_prompt = prompt_template.format(topic="Quantum Computing")
+
+# 3. Initialize and run the model
+model = init_chat_model("gpt-6-luna", model_provider="openai")
+response = model.invoke(final_prompt)
+
+# 4. Output the result
+print("AI Response:", response.text)
+```
