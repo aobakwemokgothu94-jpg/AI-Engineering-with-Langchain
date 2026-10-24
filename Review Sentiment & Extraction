@@ -1,0 +1,111 @@
+# LLM Application Fundamentals: Review Sentiment & Extraction 📊
+
+A Python lab script demonstrating how to use **LangChain** and modern LLM orchestration (`init_chat_model` and `PromptTemplate`) to extract structured insights and attributes from unstructured customer reviews.
+
+---
+
+## 🚀 Overview
+
+As applications scale, parsing customer feedback manually becomes impossible. This script automates the extraction of key attributes from e-commerce reviews, including:
+- **Overall Sentiment:** (Positive, Negative, or Mixed)
+- **Notable Phrases:** Key verbatim quotes capturing user feedback
+- **Topic-Specific Opinions:** Breaking down feedback by individual features (e.g., discounts, search functionality) along with any reported problems and suggested solutions.
+
+---
+
+## 📁 Project Structure
+
+```text
+review-sentiment-extractor/
+├── app.py              # Main Python script containing LangChain extraction logic
+├── requirements.txt    # Python dependencies
+└── README.md           # Project documentation
+⚙️ Installation & Setup
+Clone the repository:
+
+Bash
+git clone [https://github.com/aobakwemokgothu94/review-sentiment-extractor.git](https://github.com/aobakwemokgothu94/review-sentiment-extractor.git)
+cd review-sentiment-extractor
+Install dependencies:
+
+Bash
+pip install langchain langchain-core langchain-openai python-dotenv
+Configure your API Key:
+Create a .env file in the root directory and set your provider API key:
+
+Code snippet
+OPENAI_API_KEY=your_openai_api_key_here
+💻 Usage   
+Run the script directly via your terminal:   
+
+Bash
+python app.py
+Sample Input Review   
+JSON
+{
+    "review_id": "R12345",
+    "date": "2025-01-01",
+    "rating": "★★★☆☆ (3 stars)",
+    "text": "I love the discount program in this app - saved 30% on my last order! However, the search functionality is really frustrating. Results are rarely relevant to what I'm looking for. They should implement category filters and improve their search algorithm."
+}
+Example Output   
+Plaintext
+- **Overall sentiment:** Mixed
+
+- **Notable phrases:**
+  - “saved 30% on my last order”
+  - “the search functionality is really frustrating”
+  - “Results are rarely relevant to what I'm looking for”
+  - “implement category filters and improve their search algorithm”
+
+- **Opinions by topic:**
+  1. **Discount program**
+     - **Sentiment:** Positive
+     - **Problem reported:** None
+     - **Suggested solution:** None
+
+  2. **Search functionality**
+     - **Sentiment:** Negative
+     - **Problem reported:** Search results are rarely relevant to the user’s needs.
+     - **Suggested solution:** Add category filters and improve the search algorithm.
+🐍 Code Implementation
+Python
+from langchain.chat_models import init_chat_model
+from langchain_core.prompts import PromptTemplate
+
+# Initialize model
+llm = init_chat_model("gpt-4o-mini", model_provider="openai")
+
+def get_response(prompt_template_str, review):
+    prompt_template = PromptTemplate.from_template(prompt_template_str)
+    prompt = prompt_template.format(review=review)
+    response = llm.invoke(prompt)
+    return response.text
+
+# Define the Prompt Template for extraction
+prompt_template_str = """
+Given the following review:
+{review}
+Extract the following attributes from this review:
+- The overall sentiment of the review (positive, negative, mixed)
+- Notable phrases that capture key feedback
+- Individual opinions on specific topics, each with:
+  - The topic being discussed
+  - The sentiment toward that topic
+  - Any problem reported
+  - Any solution suggested
+"""
+
+# Sample review payload
+review_str = """
+{
+    "review_id": "R12345",
+    "date": "2025-01-01",
+    "rating": "★★★☆☆ (3 stars)",
+    "text": "I love the discount program in this app - saved 30% on my last order! However, the search functionality is really frustrating. Results are rarely relevant to what I'm looking for. They should implement category filters and improve their search algorithm."
+}
+"""
+
+if __name__ == "__main__":
+    response_content = get_response(prompt_template_str, review_str)
+    print(response_content)
