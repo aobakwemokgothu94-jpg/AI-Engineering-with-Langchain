@@ -1,46 +1,56 @@
 # Security Term Explainer 🛡️
 
-A lightweight Gen AI application built with **LangChain**, **OpenAI (gpt-4o-mini)**, and **Gradio** that provides clear, concise, and professional plain-language explanations of cybersecurity and IT concepts tailored specifically for security professionals.
+A lightweight Generative AI application built with **LangChain**, **OpenAI (`gpt-4o-mini`)**, and **Gradio**. It provides clear, concise, and professional plain-language explanations of cybersecurity and IT concepts tailored specifically for security and IT professionals.
 
 ---
 
-## Features
-- **Tailored AI Responses:** Uses custom prompt templates engineered to explain technical security concepts clearly and concisely (under 100 words).
-- **Interactive Web UI:** Powered by **Gradio** for instant, interactive testing through a clean browser interface.
-- **Modern LLM Orchestration:** Built using LangChain's `init_chat_model` and `PromptTemplate` components for robust prompt management.
+## 📸 Application Preview
+
+![Security Term Explainer UI](assets/screenshot.png)
 
 ---
 
-## Project Structure
+## ✨ Features
+
+- **Tailored AI Responses:** Leverages custom prompt templates designed to explain complex technical concepts concisely (under 100 words) without generic filler.
+- **Interactive Web UI:** Powered by **Gradio** for instant, user-friendly browser-based interaction.
+- **Modern LLM Orchestration:** Built using LangChain's `init_chat_model` and `PromptTemplate` components for robust, provider-agnostic prompt management.
+
+---
+
+## 📁 Project Structure
+
 ```text
 security-term-explainer/
-├── app.py              # Main application containing LangChain logic and Gradio UI
+├── assets/
+│   └── screenshot.png  # Application screenshot
+├── app.py              # Main application script (LangChain logic + Gradio UI)
 ├── requirements.txt    # Python dependencies
-├── .env                # Environment variables (API keys)
+├── .env                # Environment variables (OpenAI API key)
 └── README.md           # Project documentation
-Prerequisites & Installation
+⚙️ Installation & Setup
 Clone the repository:
 
 Bash
 git clone [https://github.com/aobakwemokgothu94/security-term-explainer.git](https://github.com/aobakwemokgothu94/security-term-explainer.git)
 cd security-term-explainer
-Install dependencies:
+Install the dependencies:
 
 Bash
 pip install langchain langchain-core langchain-openai python-dotenv gradio
-Configure your API Key:
+Configure your environment variables:
 Create a .env file in the root directory and add your OpenAI API key:
 
 Code snippet
 OPENAI_API_KEY=your_openai_api_key_here
-Usage
+🚀 Usage
 Run the application locally using Python:
 
 Bash
 python app.py
-Once launched, open your browser at the local URL provided by Gradio (typically http://127.0.0.1:7860), enter any security term (e.g., privilege escalation, lateral movement), and click Submit to get an instant explanation.
+Once launched, open your browser at the local URL provided by Gradio (typically http://127.0.0.1:7860), type a technical concept (e.g., privilege escalation or lateral movement), and click Submit to generate an instant explanation.
 
-Code Overview
+💻 Code Overview
 Python
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
@@ -50,7 +60,7 @@ import gradio as gr
 # Load environment variables
 load_dotenv()
 
-# Define prompt template
+# Define prompt template string tailored to IT/security professionals
 prompt_template_str = """
 Your task is to explain the security concept of **{input_text}** in a way that is:
 1. Clear and intuitive
@@ -58,16 +68,17 @@ Your task is to explain the security concept of **{input_text}** in a way that i
 3. Tailored specifically to an IT and cybersecurity professional.
 """
 
+# Create prompt template and model interface outside the function
 prompt_template = PromptTemplate.from_template(prompt_template_str)
 model = init_chat_model("gpt-4o-mini", model_provider="openai")
 
-# Wrapper function for Gradio
+# Wrapper function for Gradio UI
 def generate_explanation(input_text: str) -> str:
     prompt = prompt_template.format(input_text=input_text)
     response = model.invoke(prompt)
     return response.text
 
-# Build UI
+# Build the Gradio interface
 demo = gr.Interface(
     fn=generate_explanation,
     inputs=[gr.Textbox(label="Security Term", lines=1)],
