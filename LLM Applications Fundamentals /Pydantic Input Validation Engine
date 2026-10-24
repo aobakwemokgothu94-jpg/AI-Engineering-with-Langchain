@@ -1,0 +1,52 @@
+Pydantic Input Validation Engine
+A lightweight Python module designed to ingest, validate, and sanitize incoming raw JSON payloads (such as customer reviews) against strict schema rules before any downstream processing or LLM execution occurs.
+
+Features
+Strict Pattern Matching: Enforces regular expressions on fields like review IDs (^R\d{5}$) and star rating formats.
+
+Automatic Type Coercion & Parsing: Seamlessly converts ISO date strings (e.g., 2025-01-01) into native Python datetime.date objects during validation.
+
+Length Constraints: Protects downstream token budgets and systems by enforcing strict character bounds (min_length and max_length).
+
+Immediate Fail-Fast Validation: Rejects malformed or malicious payloads instantly, preventing wasted LLM API costs and guarding against pipeline corruption.
+
+Project Code
+Python
+from pydantic import BaseModel, Field
+import datetime
+from devtools import pprint
+
+
+class Review(BaseModel):
+    review_id: str = Field(description="The ID of the review", pattern=r"^R\d{5}$")
+    rating: str = Field(
+        description="The rating of the review", pattern=r"^★{1,5}☆{0,4} \(\d stars\)$"
+    )
+    date: datetime.date = Field(
+        description="The date of the review", format="YYYY-MM-DD"
+    )
+    text: str = Field(
+        description="The text of the review", min_length=1, max_length=1000
+    )
+
+
+valid_review_json = """
+{
+  "review_id": "R12345",
+  "rating": "★★★★☆ (4 stars)",
+  "date": "2025-01-01",
+  "text": "This is a great product!"
+}
+"""
+
+review = Review.model_validate_json(valid_review_json)
+
+pprint(review)
+Execution Preview / Output
+Python
+Review(
+    review_id='R12345',
+    rating='★★★★☆ (4 stars)',
+    date=datetime.date(2025, 1, 1),
+    text='This is a great product!',
+)
