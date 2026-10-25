@@ -1,0 +1,44 @@
+Diet Planning Assistant with Real-Time Streaming & Persistence
+
+Introduction
+The Diet Planning Assistant is an interactive chatbot application designed to help users create personalized meal plans. It leverages a modern stack combining LangChain, Gradio, and SQLite to provide immediate, streaming responses while robustly saving all conversation history across sessions.
+
+Technical Architecture & Flow
+1. Unified Project Workflow
+This diagram illustrates the full lifecycle of a user interaction, from input to final rendering and persistent storage.
+
+Diagram Breakdown
+User Input: The journey begins with the user’s message.
+
+Streaming Event Handler (Gradio ui.py): The Gradio UI module manages the real-time event. It immediately yields to the "UI Render (Immediate)" node to update the chat window.
+
+Real-time Token Consumption: Concurrently, the handler consumes tokens streamed from the model. Each token is both displayed ("UI Render (Immediate)") and accumulated.
+
+Chunk Accumulation & SQL Message History (logic.py): While streaming, chunks are collected. Once complete, they are consolidated as a full "AI Message," which is both stored permanently in the SQLite database and used to finalize the "UI Render (Final State)."
+
+2. Deep Dive: Streaming Flow
+This section focuses exclusively on the progressive delivery mechanism.
+
+Streaming Flow Description
+Start Stream: Initiated by user input.
+
+Model Stream: LangChain's .stream() method opens an active connection to the LLM.
+
+Chunk Yield & UI Update: The logic generator yields individual chunks immediately to the UI handler.
+
+UI Refresh: The UI renders each chunk live on screen as it arrives.
+
+Accumulate Content: Chunks are consolidated into a final message.
+
+End Stream: Concludes once the model finishes generating.
+
+Finalize Message: The complete message is saved to history.
+
+Session Management & UI
+Previous Conversations and Session Picking
+The user interface includes robust controls for managing historical data. A dynamic dropdown picker allows users to access any past conversation stored in the database.
+
+User Actions and System Responses
+🆕 New Chat: Clears the current chat interface, generates a new timestamped session ID, and initializes a clean conversation context in the SQLite backend.
+
+Dropdown Selector (Load Session): Queries the SQLite database for a selected past session, retrieves all historical HumanMessage and AIMessage objects, and populates the chat window with the full historical context.
