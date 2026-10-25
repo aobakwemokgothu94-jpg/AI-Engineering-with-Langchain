@@ -1,0 +1,98 @@
+App Review Extractor & Structured Review Pipeline
+A robust Python application built with LangChain and Pydantic that automatically extracts, validates, and structures insights (sentiment, notable phrases, and specific opinions) from customer app reviews into clean, machine-readable JSON formats.
+
+Features
+Structured LLM Output: Leverages LangChain's .with_structured_output() to guarantee responses conform strictly to predefined Pydantic models.
+
+Data Validation: Enforces strict regex patterns, length constraints, and typing via Pydantic schemas for both inputs (Review) and outputs (StructuredReview).
+
+Comprehensive Sentiment Analysis: Categorizes overall feedback and breaks down specific topic areas (e.g., App Functionality, UI & UX, Payment & Checkout, Product Information, Order Operations, Customer Service).
+
+Observability Ready: Integrated with LangSmith for automated run tracing, latency tracking, and performance debugging.
+
+Project Structure
+Plaintext
+├── main.py            # Core extraction script and Pydantic schemas
+├── .env               # Environment variables (API keys)
+└── README.md          # Project documentation
+Requirements
+Python 3.10+
+
+Dependencies:
+
+langchain
+
+langchain-core
+
+pydantic
+
+python-dotenv
+
+devtools
+
+Installation & Setup
+Clone the repository or save the script:
+
+Bash
+git clone <repository-url>
+cd <repository-folder>
+Install the required packages:
+
+Bash
+pip install langchain langchain-core pydantic python-dotenv devtools
+Configure your environment variables:
+Create a .env file in the root directory and add your LangSmith API key and LLM provider credentials:
+
+Code snippet
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
+LANGSMITH_API_KEY="your-langsmith-api-key"
+OPENAI_API_KEY="your-openai-api-key"
+Usage
+Run the main Python script to execute the review extraction pipeline:
+
+Bash
+python main.py
+Code Overview
+1. Pydantic Schemas (main.py)
+Review: Validates incoming raw review data (ensuring correct ID patterns, date formats, and star-rating structures).
+
+Opinion: Captures granular insights per topic, including sentiment, identified problems, and suggested solutions.
+
+StructuredReview: Aggregates the overall sentiment, extracted quotes, and a list of structured opinions.
+
+2. Execution Pipeline
+Validates raw input using Review.model_validate().
+
+Dynamically generates JSON schemas using .model_json_schema() to guide the LLM's output structure.
+
+Invokes the language model and prints a pretty-printed (pprint) structured preview.
+
+Output Preview
+When provided with a sample review:
+
+Python
+review = {
+    "review_id": "R12345",
+    "rating": "★★★★☆ (4 stars)",
+    "date": "2025-01-01",
+    "text": "This is a great product!",
+}
+The pipeline outputs the following validated Pydantic object:
+
+Python
+StructuredReview(
+    review_id='R12345',
+    overall_sentiment='positive',
+    notable_phrases=[
+        'This is a great product!',
+    ],
+    opinions=[
+        Opinion(
+            topic='Product Information',
+            sentiment='positive',
+            problem=None,
+            suggested_solution=None,
+        ),
+    ],
+)
