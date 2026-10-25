@@ -1,0 +1,112 @@
+Diet Planning Assistant (Streaming & Persistent Chatbot)
+A fully functional, multi-turn conversational AI chatbot built with Python, LangChain, Gradio, and SQLite. This application features real-time token streaming using Python generators and robust database persistence to save and load past chat sessions.
+
+🏗️ Visual Architecture & Data Flow
+1. High-Level System Workflow
+The diagram below illustrates how user inputs travel through the system, stream chunks live to the user interface, and ultimately commit to the SQLite database.
+
+Plaintext
+[ User Input ]
+      │
+      ▼
+[ Gradio UI (ui.py) ] ──(Stream Trigger)──► [ DietChatBot Logic (logic.py) ]
+      │                                                │
+      │ (Yields Chunks Instantly)                      │ (.stream() via LangChain)
+      ▼                                                ▼
+[ Live UI Rendering ] ◄──(Chunk Feed)─────── [ LLM Model (gpt-6-luna) ]
+      │
+      └──────(Saves Complete Response)──► [ SQLite Database (conversations.db) ]
+2. Streaming Mechanism Sequence
+Plaintext
+User Message 
+    │
+    ▼
+Append to History (HumanMessage)
+    │
+    ▼
+Call model.stream() ──► Open LLM Connection
+    │
+    ├─► Yield Chunk 1 ──► Update UI Placeholder (Refresh View)
+    ├─► Yield Chunk 2 ──► Update UI Placeholder (Refresh View)
+    └─► Yield Chunk N ──► Update UI Placeholder (Refresh View)
+    │
+    ▼
+Accumulate Full Content
+    │
+    ▼
+Save to SQLite History (AIMessage)
+🚀 Key Features
+Real-Time Token Streaming: Utilizes Python generators (yield) and LangChain's .stream() method to deliver responses chunk-by-chunk, lowering perceived latency and creating a natural conversational feel.
+
+Database Persistence: Automatically tracks message history across application sessions using SQLChatMessageHistory backed by SQLite.
+
+Session Management: Built-in controls to start a fresh chat (🆕 New Chat) or switch seamlessly between past conversations via a dynamic dropdown.
+
+Structured System Instructions: Guided by prompt engineering to keep the assistant focused on balanced meal planning and asking one question at a time.
+
+📁 Project Structure
+Plaintext
+├── logic.py      # Core chatbot backend, session management, and streaming generator
+├── ui.py         # Gradio interface layer, streaming message handler, and session UI
+└── main.py       # Main entry point linking backend logic and frontend UI
+💻 Code Implementation Highlights
+1. Backend Streaming Logic (logic.py)
+Python
+def stream_response(self, user_message: str) -> Generator[str, None, None]:
+    """Stream AI response chunks for a user message."""
+    if not (user_message := user_message.strip()):
+        return
+
+    # Add user message to history
+    self.history.add_message(HumanMessage(content=user_message))
+
+    # Stream response chunks from the model
+    response_content = ""
+    for chunk in self.model.stream(self.history.get_messages()):
+        if chunk.text:
+            response_content += chunk.text
+            yield chunk.text
+
+    # Commit complete response to database history
+    self.history.add_message(AIMessage(content=response_content))
+2. Frontend Streaming Handler (ui.py)
+Python
+def stream_message_handler(self, user_message: str, history: list):
+    """Send message to chatbot and stream the response live."""
+    if not (user_message := user_message.strip()):
+        yield "", history
+        return
+
+    # Append user prompt and empty assistant placeholder
+    history.append(gr.ChatMessage(content=user_message, role="user"))
+    history.append(gr.ChatMessage(content="", role="assistant"))
+    yield "", history
+
+    # Consume chunks from the generator and update UI view dynamically
+    full_response = ""
+    for chunk in self.diet_chatbot.stream_response(user_message):
+        full_response += chunk
+        history[-1] = gr.ChatMessage(content=full_response, role="assistant")
+        yield "", history
+🛠️ Installation & Execution
+Install Dependencies:
+
+Bash
+pip install langchain langchain-core langchain-community gradio python-dotenv
+Configure Environment:
+Create a .env file containing your provider API keys:
+
+Code snippet
+OPENAI_API_KEY="your-api-key-here"
+Run the Application (main.py):
+
+Python
+from logic import DietChatBot
+from ui import PersistentChatBotUI
+
+diet_chatbot = DietChatBot()
+chatbot_ui = PersistentChatBotUI(diet_chatbot)
+interface = chatbot_ui.create_ui()
+
+# Uncomment to launch locally
+# interface.launch()
