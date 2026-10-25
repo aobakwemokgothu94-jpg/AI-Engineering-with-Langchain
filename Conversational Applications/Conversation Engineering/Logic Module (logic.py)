@@ -1,0 +1,48 @@
+Diet Planning Assistant - Logic Module (logic.py)
+This file implements the backend logic for the diet planning chatbot by wrapping conversation state management inside a class. This allows the application to retain history across multiple turns behind a user interface.
+
+Overview
+The DietChatBot class handles the core conversational loop:
+
+Initialization (__init__): Configures the chat model, sets up the system instructions, and initializes the message history list with the system message.
+
+Message Processing (get_response): Appends incoming user inputs to the history, invokes the model with the complete list, stores the AI's response, and returns the text reply.
+
+Code Implementation
+Python
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Constants
+DEFAULT_MODEL = "gpt-6-luna"
+
+SYSTEM_MESSAGE = (
+    "You are a diet planning assistant. Help users create balanced meal plans "
+    "based on their goals, dietary needs, and preferences. Ask about one topic "
+    "at a time to avoid overwhelming the user."
+)
+
+
+class DietChatBot:
+    def __init__(self):
+        """Initialize the Diet Chatbot."""
+        self.model = init_chat_model(model=DEFAULT_MODEL, temperature=0, reasoning_effort="none")
+        self.system_msg = SystemMessage(content=SYSTEM_MESSAGE)
+        self.messages = [self.system_msg]
+
+    def get_response(self, user_message: str) -> str:
+        """Process user message and get AI response."""
+        # Add user message to messages
+        self.messages.append(HumanMessage(content=user_message))
+
+        # Get response
+        response = self.model.invoke(self.messages)
+
+        # Add AI response to messages
+        self.messages.append(AIMessage(content=response.text))
+
+        return response.text
