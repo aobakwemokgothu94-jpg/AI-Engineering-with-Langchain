@@ -1,0 +1,72 @@
+App Review Extractor & LangSmith Evaluation Pipeline
+A comprehensive Python application for extracting structured insights from customer reviews and implementing a full evaluation pipeline using LangSmith.
+
+Features
+Structured LLM Extraction: Uses LangChain and Pydantic (StructuredReview, Opinion, and Review) to guarantee strictly typed, schema-compliant JSON outputs from unstructured reviews.
+
+LangSmith Dataset Management: Automatically checks for and creates centralized evaluation datasets (app_reviews_01) in LangSmith, populating them with version-controlled test examples.
+
+Evaluation-Ready Architecture: Designed to support algorithmic evaluation, LLM-as-a-judge scorers, and systematic metrics tracking across task performance, cost, and latency.
+
+Project Structure
+Plaintext
+├── data/
+│   └── llm-application-evaluation/
+│       └── evaluation_implementation/
+│           └── evaluation_dataset.json  # Curated evaluation dataset (17 examples)
+├── .env                                 # Environment credentials (API keys)
+├── .gitignore                           # Excluded files
+├── main.py                              # Core extraction and LangSmith dataset script
+└── README.md                            # Project documentation
+Installation & Setup
+Clone the repository:
+
+Bash
+git clone <repository-url>
+cd <repository-folder>
+Install dependencies:
+
+Bash
+pip install langchain langchain-core pydantic python-dotenv devtools langsmith openevals
+Configure your environment variables (.env):
+
+Code snippet
+OPENAI_API_KEY="your-openai-api-key"
+LANGSMITH_TRACING="true"
+LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
+LANGSMITH_API_KEY="your-langsmith-api-key"
+LANGSMITH_PROJECT="optima-project"
+Usage
+1. Running the Extraction Pipeline
+Execute the main script to load the evaluation dataset, initialize the LangSmith client, and automatically upload the dataset if it does not already exist:
+
+Bash
+python main.py
+2. LangSmith Integration Code Snippet
+The application connects to LangSmith to register test datasets dynamically:
+
+Python
+from langsmith import Client
+from langsmith.evaluation import evaluate
+from openevals.llm import create_llm_as_judge
+
+client = Client()
+
+dataset_name = "app_reviews_01"
+if client.has_dataset(dataset_name=dataset_name):
+    print(f"Using existing dataset: {dataset_name}")
+else:
+    print(f"Creating new dataset: {dataset_name}")
+    dataset = client.create_dataset(
+        dataset_name=dataset_name,
+        description="Dataset for evaluating app review structured extraction",
+    )
+    examples = load_examples()
+    client.create_examples(dataset_id=dataset.id, examples=examples)
+    print(f"Dataset Created with {len(examples)} examples")
+Dataset Schema
+Each example loaded into the dataset follows a two-part structure:
+
+inputs: Contains the raw review payload (review_id, rating, date, and text).
+
+outputs: Contains the reference structured review (overall_sentiment, notable_phrases, and granular opinions mapped by topic, sentiment, problem, and suggested solution).
