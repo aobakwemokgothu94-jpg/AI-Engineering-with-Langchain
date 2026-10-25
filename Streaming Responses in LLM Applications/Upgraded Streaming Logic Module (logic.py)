@@ -1,0 +1,115 @@
+Diet Planning Assistant - Upgraded Streaming Logic Module (logic.py)
+This updated version of logic.py implements the stream_response generator method, allowing the chatbot to stream responses chunk-by-chunk in real time using LangChain's .stream() method.
+
+Key Changes & New Features
+Streaming Generator (stream_response):
+
+Declared as a generator returning Generator[str, None, None].
+
+Appends the user message to history immediately.
+
+Replaces .invoke() with self.model.stream(...) to keep the connection open and yield text chunks as they arrive.
+
+Accumulates chunks into response_content and saves the complete AI response to SQLite history once streaming finishes.
+
+Code Implementation
+Python
+import datetime
+import sqlite3
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
+from langchain_community.chat_message_histories import SQLChatMessageHistory
+from dotenv import load_dotenv
+from typing import List, Optional, Generator
+
+# Load environment variables
+load_dotenv()
+
+# Constants
+DEFAULT_MODEL = "gpt-6-luna"
+DB_CONNECTION_STRING = "sqlite:///conversations.db"
+
+SYSTEM_MESSAGE = (
+    "You are a diet planning assistant. Help users create balanced meal plans "
+    "based on their goals, dietary needs, and preferences. Ask about one topic "
+    "at a time to avoid overwhelming the user."
+)
+
+
+class DietChatBot:
+    def __init__(self, session_id: Optional[str] = None):
+        """Initialize the Diet Chatbot."""
+        self.model = init_chat_model(model=DEFAULT_MODEL, temperature=0, reasoning_effort="none")
+        self.system_msg = SystemMessage(content=SYSTEM_MESSAGE)
+
+        self._initialize_session(session_id)
+        self._initialize_history()
+
+    def _initialize_session(self, session_id: Optional[str] = None) -> None:
+        """Initialize the session."""
+        self.session_id = self._generate_session_id() if not session_id else session_id
+
+    def _generate_session_id(self) -> str:
+        """Generate a new session ID with timestamp."""
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return f"Diet Chat - {timestamp}"
+
+    def _initialize_history(self) -> None:
+        """Initialize or load the conversation for the current session."""
+        self.history = SQLChatMessageHistory(
+            session_id=self.session_id, connection_string=DB_CONNECTION_STRING
+        )
+        if not self.history.get_messages():
+            self.history.add_message(self.system_msg)
+
+    def stream_response(self, user_message: str) -> Generator[str, None, None]:
+        """Stream AI response chunks for a user message."""
+        # Check if message is empty
+        if not (user_message := user_message.strip()):
+            return
+
+        # Add user message to history
+        self.history.add_message(HumanMessage(content=user_message))
+
+        # Stream response
+        response_content = ""
+        for chunk in self.model.stream(self.history.get_messages()):
+            if chunk.text:
+                response_content += chunk.text
+                yield chunk.text
+
+        # Add final response to history
+        self.history.add_message(AIMessage(content=response_content))
+
+    def new_session(self) -> None:
+        """Create a new conversation."""
+        self._initialize_session()
+        self._initialize_history()
+
+    def load_session(self, session_id: str) -> None:
+        """Load an existing conversation."""
+        if not session_id:
+            return
+
+        self._initialize_session(session_id)
+        self._initialize_history()
+
+    def get_messages(self) -> List[BaseMessage]:
+        """Get all messages from the current session."""
+        return self.history.get_messages()
+
+    @staticmethod
+    def get_previous_conversations() -> List[str]:
+        """Get a list of all available conversations."""
+        query = """
+        SELECT session_id FROM message_store 
+        GROUP BY session_id 
+        HAVING COUNT(*) > 1
+        ORDER BY session_id DESC
+        """
+
+        db_path = DB_CONNECTION_STRING.replace("sqlite:///", "")
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            return [row[0] for row in cursor.fetchall()]
