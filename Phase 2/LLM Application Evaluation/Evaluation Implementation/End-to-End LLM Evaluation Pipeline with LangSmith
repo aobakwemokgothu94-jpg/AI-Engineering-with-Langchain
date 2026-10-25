@@ -1,0 +1,109 @@
+End-to-End LLM Evaluation Pipeline with LangSmith
+This repository establishes a robust, production-ready framework for building and executing a comprehensive evaluation pipeline for Large Language Model (LLM) applications using LangSmith. It covers version-controlled dataset creation, algorithmic and LLM-as-judge evaluation, structured multi-metric scoring, and automated experiment tracking.
+
+Architecture Overview
+The pipeline follows a structured five-stage evaluation workflow designed to measure task performance, cost, and latency systematically:
+
+Dataset Creation & Versioning: Establishes a central repository of test examples with robust checks for idempotency.
+
+Algorithmic Evaluators: Implements deterministic code-based checks (e.g., exact matching, Jaccard similarity) for objective verification.
+
+LLM-as-Judge Evaluators: Leverages secondary language models to assess semantic correctness and complex qualitative criteria.
+
+Multi-Metric Structured Evaluators: Utilizes Pydantic schemas to extract multidimensional scores and explanations from a single evaluation call.
+
+Experiment Execution: Runs parallelized evaluations via LangSmith to aggregate performance metrics, latency, and cost.
+
+Core Components & Implementation
+1. Dataset Management in LangSmith
+The dataset client checks whether an evaluation dataset already exists before creation to ensure safe re-execution without creating duplicates.
+
+Python
+from langsmith import Client
+
+# Create a LangSmith client
+ls_client = Client()
+
+def create_dataset(dataset_name, description=""):
+    if ls_client.has_dataset(dataset_name=dataset_name):
+        print(f"Using existing dataset: {dataset_name}")
+    else:
+        # Create new dataset if not found
+        dataset = ls_client.create_dataset(
+            dataset_name=dataset_name,
+            description=description
+        )
+        print(f"Created new dataset: {dataset_name}")
+
+def add_examples_to_dataset(dataset_id, examples_data):
+    ls_client.create_examples(
+        dataset_id=dataset_id,
+        examples=examples_data
+    )
+    print(f"Added {len(examples_data)} examples to dataset")
+2. Evaluator Types
+Evaluator Type	Use Case	Implementation Approach
+Algorithmic (Exact)	Deterministic fields (e.g., Sentiment, Status Codes)	Boolean evaluation comparing key-value pairs directly.
+Algorithmic (Fuzzy/Jaccard)	Set comparisons (e.g., Extracted Topics, Tags)	Intersection over union calculation providing partial credit.
+LLM-as-a-Judge	Semantic equivalence with flexible wording	Prompt-based continuous scoring (0 to 1) using openevals.
+Multi-Metric Structured	Comprehensive multidimensional reviews	Pydantic schemas enforcing structured JSON output with explanations.
+Example: Multi-Metric Structured Evaluator
+Python
+from pydantic import BaseModel, Field
+from openevals.llm import create_llm_as_judge
+
+class EvaluationMetrics(BaseModel):
+    accuracy_score: float = Field(description="Score from 0-1 measuring factual accuracy")
+    coherence_score: float = Field(description="Score from 0-1 measuring logical flow")
+    explanation1: str = Field(description="Explanation for the accuracy score")
+    explanation2: str = Field(description="Explanation for the coherence score")
+
+def multi_metric_evaluator(inputs, outputs, reference_outputs):
+    structured_evaluator = create_llm_as_judge(
+        model="openai:gpt-6-luna",
+        prompt="Evaluate the output against the reference...",
+        continuous=True,
+        feedback_key="evaluation",
+        output_schema=EvaluationMetrics
+    )
+
+    eval_result = structured_evaluator(
+        inputs=inputs,
+        outputs=outputs,
+        reference_outputs=reference_outputs
+    )
+
+    return [
+        {"key": "accuracy", "score": eval_result.accuracy_score, "comment": eval_result.explanation1},
+        {"key": "coherence", "score": eval_result.coherence_score, "comment": eval_result.explanation2}
+    ]
+3. Experiment Execution
+Systematically evaluates model functions across dataset examples with concurrency control for performance optimization.
+
+Python
+from langsmith.evaluation import evaluate
+
+def run_experiment(model_function, dataset_name, evaluators, experiment_name):
+    """
+    Run a comprehensive evaluation experiment.
+    """
+    results = evaluate(
+        model_function,
+        data=dataset_name,
+        evaluators=evaluators,
+        experiment_prefix=experiment_name,
+        max_concurrency=5  # Run 5 evaluations concurrently
+    )
+
+    # Access aggregated results
+    for evaluator_name in results.evaluator_names:
+        avg_score = results.get_average_score(evaluator_name)
+        print(f"Average {evaluator_name} score: {avg_score:.2f}")
+
+    return results
+Evaluation-Driven Development Lifecycle
+Define Success Criteria: Set baseline thresholds for Task Performance, Cost, and Latency prior to deployment.
+
+Offline Evaluation: Iterate on prompts and model parameters locally using LangSmith experiments before release.
+
+Online Monitoring: Continuously observe production traces and capture real user feedback to refine datasets over time.
