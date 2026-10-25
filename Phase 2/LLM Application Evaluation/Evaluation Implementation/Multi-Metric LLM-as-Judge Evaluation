@@ -1,0 +1,43 @@
+App Review Extraction Pipeline: Multi-Metric LLM-as-Judge Evaluation 
+Overview
+This document outlines the architecture, evaluation methodology, and experiment results for the multi-metric LLM-as-judge evaluation pipeline implemented using LangSmith and LangChain. The pipeline extracts structured review insights (sentiments, opinions, problems, and solutions) from raw customer app reviews and assesses the extraction quality against reference data using both algorithmic sentiment matching and structured LLM judgment.
+
+Evaluation Architecture & Workflow
+The evaluation pipeline is built on the following core components:
+
+Prediction Function (app_to_evaluate): Validates raw review inputs via Pydantic (Review), executes the chat model with structured output (StructuredReview), and serializes the resulting object.
+
+Evaluator 1 (Algorithmic): overall_sentiment_correctness_evaluator performs an exact match check comparing the predicted overall_sentiment against the reference sentiment.
+
+Evaluator 2 (LLM-as-a-Judge): average_opinion_problem_and_solution_correctness_evaluator utilizes create_llm_as_judge powered by the openai:gpt-6-luna model and structured via the OpinionCorrectness Pydantic schema to compute ratio-based scores and reasoning comments.
+
+Output Metrics & Schema
+The multi-metric judge evaluates each example across two continuous scoring dimensions:
+
+problem_correctness: The ratio of opinions in the output that share the same problem as the reference output relative to the total number of opinions in the reference output.
+
+solution_correctness: Out of the opinions sharing the same problem, the ratio of opinions that also match the reference solution relative to the total number of reference opinions.
+
+Pydantic Output Schema (OpinionCorrectness)
+Python
+class OpinionCorrectness(BaseModel):
+    problem_correctness: float = Field(
+        description="The ratio of opinions in the output that have the same problem as the reference output to the total number of opinions in the reference output"
+    )
+    solution_correctness: float = Field(
+        description="The ratio of opinions in the output that have the same solution as the reference output to the total number of opinions in the reference output"
+    )
+    problem_score_explanation: str = Field(
+        description="A short explanation of the problem score"
+    )
+    solution_score_explanation: str = Field(
+        description="A short explanation of the solution score"
+    )
+Experiment Execution & Results
+Dataset Name: app_reviews_01 (18 evaluation examples)
+
+Experiment Prefix: app_review_extraction_evaluation
+
+Concurrency: max_concurrency=5
+
+The experiment successfully ran across all dataset examples, executing sentiment correctness checks and multi-metric LLM evaluations in parallel.
