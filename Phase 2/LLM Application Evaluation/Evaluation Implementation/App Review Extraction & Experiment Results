@@ -1,0 +1,22 @@
+LLM Application Evaluation: App Review Extraction & Experiment Results
+Overview
+This document details the configuration and outcome of the evaluation experiment performed on the app review extraction pipeline using LangSmith. The experiment assesses the semantic correctness of extracted review problems using an LLM-as-a-judge approach.
+
+Dataset Information
+Dataset Name: app_reviews_01
+
+Total Examples: 18 evaluation examples containing raw customer reviews paired with structured reference outputs.
+
+Evaluation Configuration
+The experiment utilizes an LLM-as-a-judge evaluator to measure the semantic accuracy of extracted opinions:
+
+Evaluator Function: problem_correctness_evaluator
+
+Judge Model: gpt-6-luna
+
+Scoring Metric: Continuous score representing the ratio of opinions with matched problems to the total number of opinions in the reference output (matched_opinion_problem_count / reference_opinion_count).
+
+Experiment Execution: Run via LangSmith's evaluate function with max_concurrency=5 under the experiment prefix app_review_extraction_evaluation.
+
+Experiment Results & Link
+The evaluation successfully completed, reusing the existing app_reviews_01 dataset and logging all metric results to LangSmith.
