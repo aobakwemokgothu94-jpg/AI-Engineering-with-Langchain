@@ -1,0 +1,55 @@
+App Review Extraction & Evaluation Pipeline -
+Overview
+This document details the end-to-end dataset creation, evaluation pipeline implementation, and experiment outcomes for the app review extraction tool built using LangSmith. The pipeline processes raw customer reviews, extracts structured data (such as overall sentiment, notable phrases, and specific opinions categorized by topic), and evaluates performance against benchmark reference data.
+
+Dataset Creation
+The evaluation dataset, named app_reviews_01, serves as a central, version-controlled repository of test examples hosted within LangSmith.
+
+Total Examples: 18 evaluation examples.
+
+Data Structure: Each example consists of two main blocks:
+
+Inputs: Contains raw review metadata including date, star rating, unique review ID, and the raw review text.
+
+Outputs: Contains the reference structured review, including overall sentiment, notable phrases, and a structured array of identified opinions (topic, problem, sentiment, and suggested solution).
+
+Sample Dataset Entries
+Review ID	Rating	Date	Overall Sentiment	Sample Review Text
+R73481	★★★☆☆ (3 stars)	2024-04-29	negative	bad.
+R73491	★★★★☆ (4 stars)	2024-04-12	positive	Been using this app for about 3 months now. The interface is sleek and intuitive...
+R73497	★★☆☆☆ (2 stars)	2024-04-17	negative	This app has a major glitch when using the payment system. It showed an error but still charged me!...
+Implementation & Evaluators
+To measure the accuracy of the app's extraction capabilities, an algorithmic evaluator was implemented:
+
+Overall Sentiment Correctness Evaluator: Compares the extracted overall_sentiment directly against the reference output sentiment, returning a boolean (True or False).
+
+Prediction Function (app_to_evaluate): Executes the extraction model on each raw review input and serializes the output using Pydantic's .model_dump().
+
+Experiment Execution: The evaluation runs via LangSmith's evaluate function with max_concurrency=5 under the experiment prefix app_review_extraction_evaluation.
+
+Evaluation Previews & Results
+Running the experiment records each test case and its evaluation score in LangSmith under the Datasets & Experiments tab. Below is a preview of the structured data format and evaluation payloads generated during the pipeline run.
+
+Data Preview (JSON Format)
+JSON
+{
+  "date": "2024-04-17",
+  "text": "This app has a major glitch when using the payment system. It showed an error but still charged me!...",
+  "rating": "★★☆☆☆ (2 stars)",
+  "review_id": "R73497"
+}
+{
+  "opinions": [
+    {
+      "topic": "Payment & Checkout",
+      "problem": "Major glitch in the payment system that charged the user despite showing an error",
+      "sentiment": "negative",
+      "suggested_solution": "Fix the payment system glitch"
+    }
+  ],
+  "review_id": "R73497",
+  "notable_phrases": ["major glitch when using the payment system", "showed an error but still charged me"],
+  "overall_sentiment": "negative"
+}
+Conclusion
+The implementation successfully establishes a robust, reproducible evaluation workflow. By utilizing safety checks (such as has_dataset validation), the script avoids duplicate uploads on re-runs, ensuring clean version tracking and reliable metric reporting across experiments.
