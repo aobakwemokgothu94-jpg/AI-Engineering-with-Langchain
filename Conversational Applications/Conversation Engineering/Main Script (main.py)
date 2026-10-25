@@ -1,0 +1,25 @@
+Diet Planning Assistant with Persistence - Main Script (main.py)
+This file serves as the main entry point for the updated persistent chatbot application on LLM Application Fundamentals with LangChain. It integrates the backend logic with the new persistent UI components to enable session management and conversation history storage.
+
+Overview
+Import Modules: Imports the core DietChatBot backend logic and the PersistentChatBotUI component.
+
+Initialize Chatbot: Instantiates the DietChatBot class to handle model interactions and state.
+
+Build Persistent UI: Passes the chatbot instance into PersistentChatBotUI to construct the interface with history tracking, session dropdowns, and a "New Chat" button.
+
+Launch Application: Sets up the Gradio interface to run within the platform environment.   
+
+Code Implementation   
+Python
+# from logic import DietChatBot
+# from ui import PersistentChatBotUI
+
+# Initialize the chatbot
+diet_chatbot = DietChatBot()
+
+# Create and launch the UI with persistence
+chatbot_ui = PersistentChatBotUI(diet_chatbot)
+interface = chatbot_ui.create_ui()
+
+# interface.launch()
