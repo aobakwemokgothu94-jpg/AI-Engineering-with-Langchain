@@ -1,0 +1,24 @@
+Chatbot Evaluation Overview & Implementation Summary
+This section from the LLM Application Evaluation with LangSmith lesson covers evaluating multi-turn conversational AI systems using full-conversation criteria and LLM judges.
+
+Core Evaluation Concepts
+Offline vs. Online Evaluation: Offline testing uses controlled examples during development before release, whereas online evaluation analyzes real production logs to catch edge cases and monitor trends over time.
+
+Evaluation Scope: Evaluations can be performed at the turn-level (single AI response) or the full conversation level (entire interaction from start to finish).
+
+Reference-Based vs. Criteria-Based: While reference-based evaluation checks outputs against exact answers, conversational AI requires criteria-based evaluation (scoring against rubrics like coherence or task completion) because chat interactions can unfold in multiple valid ways.
+
+Implementation Structure
+The criteria-based conversation evaluation pipeline on DataCamp follows three main steps:
+
+Dataset Creation: Loading chat history logs from an SQLite database and grouping messages into full session threads.
+
+Evaluator Definition: Utilizing a Pydantic model (ConversationEval) alongside an LLM-as-a-judge (create_llm_as_judge) to score dimensions from 0 to 1 with corresponding explanations:
+
+Coherence: Contextual consistency and logical flow across responses.
+
+Task Completeness: How effectively the assistant achieves the user's primary goal.
+
+Efficiency: How directly the assistant gathers required information without unnecessary steps.
+
+Experiment Execution: Running the evaluation via LangSmith's evaluate() function to aggregate scores, provide qualitative reasoning, and track performance.
