@@ -1,0 +1,43 @@
+Streaming Responses in LLM Applications
+This repository section demonstrates how to implement real-time text streaming using Python generators and the yield keyword, laying the foundation for live token streaming in conversational AI applications.
+
+Overview
+In traditional LLM calls, users must wait for the entire response to generate before seeing any output, leading to loading spinners and higher perceived wait times. Streaming solves this by delivering tokens or chunks of text progressively as they are produced.
+
+This script provides a simplified, non-LLM mockup using a Python generator function to illustrate how data is yielded chunk-by-chunk and consumed iteratively.
+
+How It Works
+Generator Function (stream_diet_response): Instead of returning a complete sentence at once, it splits a hardcoded response into individual words and uses yield to pause execution and emit each word (chunk + " ") one at a time.
+
+Consumer Loop: A standard for loop iterates through the generator object, pulling one chunk at a time and printing it. This is the exact mechanism chat frameworks use to stream responses live into a user interface.
+
+Code Implementation
+Python
+def stream_diet_response():
+    """Stream a response chunk by chunk"""
+    response = "I'll help you create a healthy meal plan for your goals."
+
+    # Stream response in small chunks
+    for word in response.split():
+        yield word + " "
+
+
+# Using the generator
+print("LLM streaming response:\n")
+for i, chunk in enumerate(stream_diet_response()):
+    print(f"Chunk {i + 1}: {chunk.strip()}")
+Example Output
+Plaintext
+LLM streaming response:
+
+Chunk 1: I'll
+Chunk 2: help
+Chunk 3: you
+Chunk 4: create
+Chunk 5: a
+Chunk 6: healthy
+Chunk 7: meal
+Chunk 8: plan
+Chunk 9: for
+Chunk 10: your
+Chunk 11: goals.
