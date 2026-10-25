@@ -1,0 +1,69 @@
+Conversation Evaluation Pipeline for Diet Assistant
+This repository implements an online and offline evaluation pipeline for multi-turn chat applications using LangSmith. Specifically, it focuses on conversation-level criteria-based evaluation for a diet planning chatbot, moving beyond single-turn exact-match testing to score entire chat threads against quality rubrics.
+
+Architecture & Workflow
+SQLite Database (chat_history.db) 
+       │
+       ▼
+[Load & Format Conversations] ──► Groups by session_id, filters system prompts
+       │
+       ▼
+[LangSmith Dataset Creation] ────► Stores full chat threads as individual examples
+       │
+       ▼
+[Criteria-Based Evaluation] ─────► Scores multi-turn interactions (Task Completion, Medical Soundness, Efficiency, Coherence)
+Core Components
+1. Conversation Data Ingestion
+The pipeline extracts historical chat messages from an SQLite message store, aggregates them by session, and structures them into chat history inputs compatible with LangSmith evaluation schemas.
+
+Python
+import sqlite3
+import json
+
+def load_conversations(db_path):
+    conversations = {}
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM message_store ORDER BY session_id, id")
+
+    for row in cursor.fetchall():
+        session_id = row[1]
+        message_data = json.loads(row[2])
+
+        if message_data.get("type") == "system":
+            continue
+
+        if session_id not in conversations:
+            conversations[session_id] = []
+
+        role = "user" if message_data.get("type") == "human" else "assistant"
+        content = message_data.get("data", {}).get("content", "")
+        conversations[session_id].append({"role": role, "content": content})
+
+    examples = [{"inputs": {"conversation": messages}} for messages in conversations.values() if len(messages) >= 2]
+    return examples
+2. Dataset Management
+Automatically checks for existing datasets in LangSmith to prevent duplicate uploads during iterative development cycles.
+
+Python
+from langsmith import Client
+
+def create_dataset(client: Client, dataset_name: str, examples: list):
+    if client.has_dataset(dataset_name=dataset_name):
+        print(f"Using existing dataset: {dataset_name}")
+    else:
+        dataset = client.create_dataset(
+            dataset_name, description="Evaluation dataset for conversation quality"
+        )
+        client.create_examples(
+            inputs=[ex["inputs"] for ex in examples], dataset_id=dataset.id
+        )
+        print(f"Created new dataset: {dataset_name}")
+Evaluation Criteria Rubric
+For multi-turn conversational agents where single correct reference answers do not exist, outputs are scored from 0 to 1 across four primary criteria:
+
+Criterion	Description	Focus Area
+Task Completeness	Measures how effectively the assistant helps create a personalized diet plan.	Goal fulfillment
+Medical Soundness	Evaluates whether nutritional advice follows safe, evidence-based guidelines.	Safety & accuracy
+Efficiency	Assesses how directly and quickly information is gathered and a solution is reached.	User experience
+Coherence	Checks how well the assistant maintains logical flow and context across turns.	Conversational consistency
