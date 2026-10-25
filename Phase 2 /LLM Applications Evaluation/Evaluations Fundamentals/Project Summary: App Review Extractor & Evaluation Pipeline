@@ -1,0 +1,26 @@
+Project Summary: App Review Extractor & Evaluation Pipeline
+This project builds an automated pipeline using Python, LangChain, and Pydantic to extract structured insights from unstructured customer app reviews. Designed with production readiness and observability in mind, it serves as a foundation for systematic AI application development and evaluation.
+
+Key Components
+1. Data Models & Validation (Pydantic)
+The project utilizes strict schemas to validate incoming data and enforce structured outputs from the language model:
+
+Review: Validates incoming raw review data, enforcing specific string patterns for star ratings (rating) and date formats (date).
+
+Opinion: Breaks down granular feedback by specific topics (App Functionality, UI & UX, Payment & Checkout, Product Information, Order Operations, or Customer Service), capturing sentiment, identified problems, and suggested solutions.
+
+StructuredReview: Aggregates the review ID, overall sentiment, extracted notable phrases, and a list of structured Opinion objects.
+
+2. Extraction Pipeline (LangChain)
+Dynamic JSON Schemas: Converts Pydantic models into JSON schema specifications dynamically passed to the LLM.
+
+Structured Outputs: Leverages LangChain's .with_structured_output() to guarantee that responses map directly to typed Pydantic objects rather than raw strings.
+
+Error Resilience: Includes fallback handling and validation error logging for incoming data structures.
+
+3. Observability & Evaluation (LangSmith)
+Automated Tracing: Integrates seamlessly with LangSmith via environment variables (LANGSMITH_TRACING) to record end-to-end run telemetry.
+
+Performance & Cost Tracking: Captures critical runtime metrics including token consumption, response latency, and operational cost per execution trace.
+
+Evaluation Foundation: Built upon evaluation-driven principles—focusing on test datasets, expected reference outputs, and systematic scoring methodologies (task performance, cost, and latency) to measure iterations safely before production deployment.
