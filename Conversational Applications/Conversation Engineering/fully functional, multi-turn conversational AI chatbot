@@ -1,0 +1,62 @@
+Diet Planning Assistant
+A fully functional, multi-turn conversational AI chatbot built with Python, LangChain, Gradio, and SQLite. This application acts as a personal diet planning assistant, helping users create balanced, sustainable meal plans based on their unique goals, preferences, and dietary restrictions while maintaining full conversation history and persistence across sessions.
+
+Features
+Multi-Turn Conversations: Maintains full conversational context by passing an ordered history of messages (System, Human, and AI) to the LLM with every request.
+
+Database-Backed Persistence: Automatically saves every exchange to a local SQLite database using LangChain's SQLChatMessageHistory.
+
+Session Management: Allows users to seamlessly create new chat sessions or load and switch between past conversations using a dynamic dropdown interface.
+
+Interactive UI: Built with Gradio using a clean, modern soft theme (gr.Blocks), featuring a chat interface, real-time message handling, and session controls.
+
+Structured System Instructions: Configured with explicit prompt engineering to ensure the assistant asks about one topic at a time, preventing user overwhelm.
+
+Project Structure
+Plaintext
+├── logic.py      # Core chatbot logic, LangChain integration, and SQLite persistence
+├── ui.py         # Gradio user interface layer and session event handlers
+└── main.py       # Main entry point linking logic and UI together
+Module Breakdown
+1. Backend Logic (logic.py)
+Handles model initialization via LangChain, system prompts, message history tracking, and SQLite database interactions.
+
+DietChatBot class: Manages session creation (_initialize_session), message appending (get_response), history retrieval (get_messages), and querying past sessions (get_previous_conversations).
+
+2. Persistent User Interface (ui.py)
+Builds the front-end layout using Gradio and bridges user interactions with the backend chatbot instance.
+
+PersistentChatBotUI class: Handles chat message submission (send_message_handler), new session creation (new_session_handler), history loading (load_session_handler), and dropdown state synchronization.
+
+3. Main Application Entry Point (main.py)
+Ties the modular components together to launch the application.
+
+Python
+from logic import DietChatBot
+from ui import PersistentChatBotUI
+
+# Initialize the chatbot backend
+diet_chatbot = DietChatBot()
+
+# Create and launch the UI with persistence
+chatbot_ui = PersistentChatBotUI(diet_chatbot)
+interface = chatbot_ui.create_ui()
+
+# interface.launch()  # Uncomment to run locally
+Installation & Setup
+Clone the repository and navigate to the project directory.
+
+Install dependencies:
+
+Bash
+pip install langchain langchain-core langchain-community gradio python-dotenv
+Configure Environment Variables:
+Create a .env file in the root directory and add your necessary API keys (e.g., OpenAI or platform-specific keys required by init_chat_model):
+
+Code snippet
+OPENAI_API_KEY="your-api-key-here"
+Run the Application:
+Uncomment interface.launch() in your main script and execute:
+
+Bash
+python main.py
