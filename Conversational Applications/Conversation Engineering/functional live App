@@ -1,0 +1,27 @@
+Diet Planning Assistant (Multi-Turn Chatbot Main Script)
+This script serves as the main entry point for the diet planning conversational application. It imports the core logic and user interface components, initializes the chatbot instance, builds the Gradio interface, and sets up the application for execution.
+
+Overview
+In multi-turn chat applications, separating concerns into distinct modules—such as managing the conversation state/logic and rendering the UI—keeps the codebase clean and maintainable. This file ties those pieces together:
+
+Import Modules: Brings in the chatbot backend logic (DietChatBot) and the UI framework (ChatBotUI).
+
+Initialize Logic: Instantiates the DietChatBot to manage message history and model interactions.
+
+Build Interface: Passes the chatbot logic into the ChatBotUI class to construct the visual components.
+
+Launch Application: Prepares the Gradio interface to run locally or within a hosted platform environment.
+
+Code Implementation
+Python
+# from logic import DietChatBot
+# from ui import ChatBotUI
+
+# Initialize the chatbot
+diet_chatbot = DietChatBot()
+
+# Create and launch the UI
+chatbot_ui = ChatBotUI(diet_chatbot)
+interface = chatbot_ui.create_ui()
+
+# interface.launch()
