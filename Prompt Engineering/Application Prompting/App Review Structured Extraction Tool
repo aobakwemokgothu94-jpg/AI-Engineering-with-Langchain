@@ -1,0 +1,48 @@
+App Review Structured Extraction Tool
+A Python application built using LangChain and Pydantic that extracts structured information, sentiment analysis, and specific user opinions from app reviews.
+
+Features
+Input Validation: Validates raw review data structures (IDs, ratings, dates, and text length) using Pydantic models before processing.
+
+Structured Output Generation: Leverages LLM structured outputs to map unstructured text into strongly-typed Pydantic schemas (StructuredReview and Opinion).
+
+Granular Insight Extraction: Identifies overall sentiment, notable verbatim phrases, and categorical opinions across specific topics such as App Functionality, UI & UX, Payment & Checkout, and Customer Service.
+
+Template-Driven Prompting: Uses external markdown prompt templates (prompt.md) for flexible prompt engineering and iterative improvement.
+
+Prerequisites
+Python 3.10+
+
+An API key for your targeted LLM provider configured via environment variables.
+
+Installation
+Clone the repository and navigate to the project directory.
+
+Install the required dependencies:
+
+Bash
+pip install langchain langchain-core langchain-openai pydantic python-dotenv devtools
+Create a .env file in the root directory and add your required API keys (e.g., OpenAI API key):
+
+Code snippet
+OPENAI_API_KEY=your_api_key_here
+Project Structure
+app.py: Main application script containing schema definitions, validation logic, and LLM invocation functions.
+
+prompt.md: External prompt template file injected during execution.
+
+.env: Environment configuration file for secrets.
+
+Usage
+Ensure that your prompt.md file is present in the root directory, then run the application:
+
+Bash
+python app.py
+Example Input Review
+JSON
+{
+    "review_id": "R12345",
+    "rating": "★★★★☆ (4 stars)",
+    "date": "2025-01-01",
+    "text": "This is a great product!"
+}
