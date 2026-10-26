@@ -1,0 +1,74 @@
+App Review Extraction Engine (app.py)
+This README provides an overview, code explanation, and usage guide for the app.py script, which powers structured information extraction from customer reviews using LangChain, Pydantic validation, and an external prompt template.
+
+Architecture & Project Structure
+To maintain clean code separation and simplify prompt iterations, the project is structured into distinct files:
+
+app.py: The core application logic handling input validation, prompt rendering, and LLM orchestration.
+
+prompt.md: The external Markdown file containing instructions and layout templates for the LLM.
+
+eval.py: The evaluation script used to run test datasets and assess extraction quality.
+
+Code Breakdown
+1. Environment & Imports
+Python
+import datetime
+import json
+from devtools import pprint
+from dotenv import load_dotenv
+
+from langchain.chat_models import init_chat_model
+from langchain_core.prompts import PromptTemplate
+from pydantic import BaseModel, Field, ValidationError
+from typing import Optional
+
+load_dotenv()
+
+with open("prompt.md", "r") as f:
+    prompt_template_str = f.read()
+load_dotenv(): Loads secure API credentials from a local environment file.
+
+prompt.md: Loaded dynamically at startup so prompt adjustments can be made without modifying application code.
+
+2. Pydantic Models for Schema Enforcement
+Pydantic ensures runtime type safety and strict schema validation for both raw inputs and structured outputs:
+
+Review: Validates the input structure (review ID format, star-rating patterns, date, and text constraints).
+
+Opinion: Captures granular insights broken down into specific functional topics (App Functionality, UI & UX, Payment & Checkout, etc.), sentiment, problems, and suggested solutions.
+
+StructuredReview: Acts as the root container schema holding the overall sentiment, verbatim notable phrases, and extracted opinions.
+
+3. LLM Setup & Structured Output
+Python
+llm = init_chat_model(model="gpt-6-luna", temperature=0, reasoning_effort="none")
+structured_llm = llm.with_structured_output(StructuredReview)
+Configures the chat model with a deterministic temperature (0) to ensure consistent outputs.
+
+Enforces that the model's response maps directly to the StructuredReview Pydantic model.
+
+4. Core Execution Flow
+get_response(...): Formats the prompt.md template using LangChain's PromptTemplate, injecting the review payload and JSON schema, then invokes the model.
+
+extract_structured_review(...): Validates incoming review dictionaries, catches validation errors gracefully, triggers the extraction pipeline, and optionally returns the compiled prompt alongside the response.
+
+Example Output Preview
+When executed with a valid review, the application compiles the Markdown prompt and yields a clean, structured object:
+
+Python
+Review(
+    review_id="R12345",
+    overall_sentiment="positive",
+    notable_phrases=[
+        "This is a great product!"
+    ],
+    opinions=[
+        Opinion(
+            topic="App Functionality",
+            sentiment="positive",
+            problem=None,
+            suggested_solution=None
+        )
+    ]
+)
