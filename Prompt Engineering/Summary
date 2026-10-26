@@ -1,0 +1,5 @@
+Prompt Engineering: Prompting serves as the natural language interface to "program" LLMs. Well-structured prompts significantly enhance output quality, and application-level prompting demands higher reliability across diverse inputs compared to casual chat.
+
+Prompt Formatting: Plain text prompts quickly become unmanageable as applications scale. Markdown offers the optimal balance of human readability, easy editing, and model comprehension when organized with clear section headers.
+
+Project Structure: Codebases should be separated into distinct files—app.py for application logic, prompt.md for prompt templates, and eval.py for evaluation—to maximize maintainability and allow independent iteration on each component.
