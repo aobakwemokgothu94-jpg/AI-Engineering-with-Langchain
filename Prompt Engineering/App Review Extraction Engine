@@ -1,0 +1,66 @@
+App Review Extraction Engine
+This README provides an overview and breakdown of the App Review Extraction task, explaining how raw unstructured text is structured into a standardized JSON format suitable for analytical dashboards.
+
+Overview
+The purpose of this component is to ingest user app reviews, extract key sentiment signals, identify specific problems or suggested solutions, and categorize opinions across predefined domains (such as Payment & Checkout or App Functionality).
+
+Input Data Example
+An incoming review contains metadata (ID, rating, date) alongside free-form text:
+
+JSON
+{
+    "review_id": "R73482",
+    "rating": "★★★☆☆ (3 stars)",
+    "date": "2025-04-12",
+    "text": "Love the checkout experience and rewards program! But the app has gotten noticeably slower with recent updates. Would be nice if you could save payment info instead of entering it every time."
+}
+Output Schema Breakdown
+The engine maps the review text into a structured JSON payload defined by the following fields:
+
+review_id: A unique string identifier for the review.
+
+overall_sentiment: The aggregated sentiment of the review (e.g., positive, negative, neutral, or mixed).
+
+notable_phrases: Verbatim quotes or phrases extracted directly from the review text (capped at 3 phrases under 100 characters each).
+
+opinions: An array of detailed opinion objects. Each opinion covers a specific topic and includes:
+
+topic: Categorized into one of six core areas: App Functionality, UI & UX, Payment & Checkout, Product Information, Order Operations, or Customer Service.
+
+sentiment: The sentiment specifically tied to that topic.
+
+problem: The pain point mentioned by the user, if applicable.
+
+suggested_solution: Any improvement or fix proposed by the reviewer.
+
+Example Output
+JSON
+{
+  "review_id": "R73482",
+  "overall_sentiment": "mixed",
+  "notable_phrases": [
+    "Love the checkout experience and rewards program!",
+    "app has gotten noticeably slower with recent updates",
+    "Would be nice if you could save payment info"
+  ],
+  "opinions": [
+    {
+      "topic": "Payment & Checkout",
+      "sentiment": "positive",
+      "problem": null,
+      "suggested_solution": null
+    },
+    {
+      "topic": "App Functionality",
+      "sentiment": "negative",
+      "problem": "The app has gotten noticeably slower with recent updates.",
+      "suggested_solution": null
+    },
+    {
+      "topic": "Payment & Checkout",
+      "sentiment": "neutral",
+      "problem": "Have to enter payment info every time.",
+      "suggested_solution": "Save payment info instead of entering it every time."
+    }
+  ]
+}
