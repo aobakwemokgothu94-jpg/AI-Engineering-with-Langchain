@@ -1,0 +1,94 @@
+App Review Extraction with LangChain
+An LLM-powered Python application designed to automatically parse, structure, and analyze app store reviews. It extracts granular insights—including overall sentiment, notable phrases, specific problems, and suggested solutions—and formats them into structured JSON to power product, operations, and marketing dashboards.
+
+🚀 Features
+Structured Extraction: Automatically maps unstructured user reviews into a validated Pydantic schema using LangChain.
+
+Granular Sentiment Analysis: Breaks down feedback by specific topics (e.g., UI & UX, Payment & Checkout, Customer Service) rather than just a single blanket score.
+
+Actionable Insights: Separates user complaints into distinct problem statements and suggested solutions.
+
+Rigorous Evaluation: Includes an evaluation script to measure prompt performance across custom validation datasets.
+
+📂 Project Structure
+Plaintext
+├── app.py          # Main Python application handling model calls and extraction logic
+├── prompt.md       # Modular prompt template defining purpose, input, output, and few-shot examples
+└── eval.py         # Evaluation script to benchmark and score prompt accuracy against reference data
+🛠️ Prompt Architecture (prompt.md)
+The prompt follows a robust 7-section design pattern optimized for reliable application prompting:
+
+Purpose: Clearly defines the overarching objective (dashboard data extraction).
+
+Input Description: Specifies the expected format of incoming reviews and warns the model to handle slang, typos, and informal phrasing.
+
+Output Description & Constraints: Enforces strict JSON output formatting, JSON-escaping rules, and strict constraints (e.g., no markdown code block wrappers around the final JSON).
+
+Examples: Provides a comprehensive few-shot example demonstrating how to handle mixed-sentiment reviews, implicit solutions, and categorical mapping.
+
+📋 Example Input & Output Preview
+Input Review
+Review ID: R73482
+
+Rating: ★★★☆☆ (3 stars)
+
+Date: April 12, 2025
+
+Text: "The checkout process is super smooth and I love the rewards program - definitely keeps me coming back! But the app has gotten noticeably slower with recent updates, especially when browsing product categories. Sometimes it takes forever to load images and occasionally freezes when I try to add items to my cart. Would be nice if you could add an option to save payment info instead of entering it every time. Also, customer service never responded to my message about a delayed delivery last week."   
+
+Extracted Output (JSON)
+JSON
+{
+  "review_id": "R73482",
+  "overall_sentiment": "mixed",
+  "notable_phrases": [
+    "checkout process is super smooth",
+    "app has gotten noticeably slower with recent updates",
+    "never responded to my message about a delayed delivery"
+  ],
+  "opinions": [
+    {
+      "topic": "App Functionality",
+      "sentiment": "negative",
+      "problem": "App is slow when browsing categories and loading images",
+      "suggested_solution": ""
+    },
+    {
+      "topic": "UI & UX",
+      "sentiment": "negative",
+      "problem": "App freezes when adding items to cart",
+      "suggested_solution": ""
+    },
+    {
+      "topic": "Payment & Checkout",
+      "sentiment": "positive",
+      "problem": "",
+      "suggested_solution": ""
+    },
+    {
+      "topic": "Payment & Checkout",
+      "sentiment": "neutral",
+      "problem": "Cannot save payment information",
+      "suggested_solution": "Add option to save payment details for future purchases"
+    },
+    {
+      "topic": "Customer Service",
+      "sentiment": "negative",
+      "problem": "No response to inquiry about delayed delivery",
+      "suggested_solution": ""
+    }
+  ]
+}
+🚀 Getting Started
+Clone the repository or open your workspace environment.
+
+Configure your API keys (such as LangSmith and your LLM provider keys) in your environment variables.
+
+Run the main application:
+
+Bash
+python app.py
+Run the evaluation suite to check baseline metrics and prompt iteration performance:
+
+Bash
+python eval.py
