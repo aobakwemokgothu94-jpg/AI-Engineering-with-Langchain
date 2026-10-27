@@ -1,0 +1,37 @@
+# App Review Structured Extraction & Prompt Evaluation
+
+## Overview
+This repository contains a structured application and evaluation pipeline designed to parse unstructured app reviews into actionable insights for product, operations, and marketing teams. Using **LangChain**, **Pydantic**, and **LangSmith**, this project implements rigorous LLM evaluation to measure sentiment correctness, topic extraction similarity, and opinion-level problem/solution accuracy.
+
+## Project Structure
+- `app.py`: Core application code utilizing structured output extraction.
+- `prompt.md`: The core prompt template governing how raw app reviews are formatted and parsed.
+- `eval.py`: Evaluation harness configured with custom LangSmith evaluators and LLM-as-a-judge metrics.
+- `data/prompt-engineering/prompt-management/evaluation_dataset.json`: Ground-truth dataset containing 18 curated app review examples.
+
+## Evaluation Metrics
+1. **Overall Sentiment Correctness**: Boolean evaluation verifying whether the extracted overall sentiment matches ground truth.
+2. **Topic Similarity**: Jaccard similarity score comparing extracted review topics against reference topics.
+3. **Problem Correctness**: Ratio of correctly identified problem statements relative to the reference dataset.
+4. **Solution Correctness**: Ratio of correctly mapped solutions corresponding to identified problems.
+
+## Getting Started
+
+### Prerequisites
+- Python 3.10+
+- Install required packages:
+  ```bash
+  pip install langchain langsmith openevals pydantic python-dotenv pandas
+Configuration
+Create a .env file in the root directory and add your API keys:
+
+Code snippet
+OPENAI_API_KEY=your_openai_api_key
+LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=app_review_extraction_evaluation
+Running the Evaluation
+Execute the evaluation pipeline to run test cases against the dataset and generate aggregate performance metrics:
+
+Bash
+python eval.py
