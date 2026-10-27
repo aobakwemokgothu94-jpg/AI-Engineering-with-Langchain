@@ -1,0 +1,39 @@
+# App Review Structured Extraction & Prompt Engineering
+
+## Overview
+This repository contains a structured application and evaluation pipeline designed to parse unstructured app reviews into actionable insights for product, operations, and marketing teams. Developed as part of the LangChain prompt engineering curriculum, this project demonstrates systematic prompt iteration, structural template design, and rigorous LLM evaluation using **LangSmith** and **Pydantic**.
+
+## Project Structure
+- `app.py`: Core application code utilizing structured output extraction with Pydantic schemas.
+- `prompt.md`: The modular prompt template governing input formatting, purpose definition, and output constraints.
+- `eval.py`: Evaluation harness configured with custom LangSmith evaluators, Jaccard similarity metrics, and LLM-as-a-judge correctness grading.
+- `evaluation_dataset.json`: Ground-truth dataset containing curated app review samples.
+
+## Key Prompt Engineering Principles Applied
+1. **Clear Purpose Statement:** Leading the prompt with a direct, outcome-oriented action verb (`Extract`) to remove ambiguity.
+2. **Modular Structure:** Separating instructions into distinct sections (`## Purpose`, `## Input`, `## Output`) to enhance model comprehension.
+3. **Systematic Evaluation:** Measuring performance improvements across iterations using custom metrics:
+   - **Overall Sentiment Correctness:** Verifying sentiment classification accuracy against ground truth.
+   - **Topic Similarity:** Calculating Jaccard similarity between extracted topics and reference topics.
+   - **Problem & Solution Correctness:** Utilizing an LLM-as-a-judge evaluator to score problem-solution mapping ratios.
+
+## Getting Started
+
+### Prerequisites
+- Python 3.10+
+- Install required packages:
+  ```bash
+  pip install langchain langsmith openevals pydantic python-dotenv pandas
+Configuration
+Create a .env file in the root directory and configure your credentials:
+
+Code snippet
+OPENAI_API_KEY=your_openai_api_key
+LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=app_review_extraction_evaluation
+Running the Evaluation
+Execute the evaluation script to run test cases against the dataset and output aggregate performance metrics:
+
+Bash
+python eval.py
