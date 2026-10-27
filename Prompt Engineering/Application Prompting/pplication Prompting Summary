@@ -1,0 +1,31 @@
+Application Prompting Summary
+1. The 7-Section Prompt Template
+Instead of writing unstructured natural language, professional prompts for applications follow a robust structural framework:
+
+Purpose: Defines the primary goal and outcome of the prompt using direct, action-oriented language.
+
+Input Description: Clarifies the structure, expected schema, and quirks (like slang or errors) of the incoming data.
+
+Output Description: Outlines format specifications, required schema structures, content rules, and negative constraints (e.g., returning valid JSON only).
+
+Success Criteria: Details what a high-quality, accurate, and consistent result looks like.
+
+Instructions: (Optional) Explicit step-by-step procedures used only when the task flow isn't self-evident.
+
+Background: Provides critical context regarding who will consume the output and how the downstream pipeline uses it.
+
+Examples: Strategic few-shot demonstrations showing the model how to handle edge cases, tone shifting, and complex parsing.
+
+2. Core Principles of Prompt Engineering
+Clarity: Use precise verbs and unambiguous definitions to prevent the model from guessing.
+
+Completeness: Provide all necessary schema and formatting context upfront so the model doesn't improvise blindly.
+
+Organization: Logically separate sections using clear headings, placing heavy emphasis on critical constraints at the beginning or end.
+
+Consistency: Keep naming conventions, formats, and categorical lists uniform.
+
+3. Operational Best Practices
+Evaluation-Driven Iteration: Build baseline metrics and evaluation scripts before tweaking prompts, ensuring every change moves performance forward objectively.
+
+Handling Template Collisions: When embedding structured code blocks like JSON into prompt templates, remember to escape internal curly braces ({{ and }}) so the template engine doesn't mistake them for variables
