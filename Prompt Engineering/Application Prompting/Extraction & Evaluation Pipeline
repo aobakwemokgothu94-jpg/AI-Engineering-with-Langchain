@@ -1,0 +1,52 @@
+# App Review Extraction & Evaluation Pipeline
+
+A Python-based application for extracting structured information from customer app reviews using LangChain and Pydantic, paired with a LangSmith evaluation pipeline to measure extraction accuracy across multiple metrics.
+
+---
+
+## Repository Structure
+
+* **`app.py`**: Core extraction module using LangChain and Pydantic to parse, validate, and convert unstructured review data into structured JSON objects matching defined schemas.
+* **`prompt.md`**: Modular prompt template defining the application purpose, input structure specifications, output formatting requirements, and constraints.
+* **`eval.py`**: Evaluation script utilizing LangSmith and LLM-as-a-judge patterns (`openevals`) to assess performance against an evaluation dataset.
+
+---
+
+## Features
+
+* **Structured Output Extraction**: Enforces strict output validation via Pydantic models (`Review`, `Opinion`, `StructuredReview`).
+* **Categorical Consistency**: Restricts categorization fields to predefined domain topics to maintain reliable analytics for operational dashboards.
+* **Comprehensive Evaluation Pipeline**: Measures performance across sentiment correctness, topic similarity (Jaccard index), and problem/solution correctness.
+
+---
+
+## Preview
+
+### Prompt Template Structure (`prompt.md`)
+```text
+## Purpose
+Extract structured information including overall sentiment and specific opinions (problems and solutions) from the provided app review to power product and operations dashboards.
+
+## Input
+You will receive a single app review containing:
+{input_structure}
+
+The review may contain various topics, emotions, spelling errors, abbreviations, and slang typical of user-generated content.
+
+The actual input to process now is:
+{review}
+
+## Output
+Format specification:
+* Return output in JSON format
+* Generate a structured JSON object conforming to schema: {output_structure}
+...
+Evaluation Metrics Summary Output
+Markdown
+| metric | mean |
+| :--- | :--- |
+| feedback.overall_sentiment_correctness_evaluator | 0.94 |
+| feedback.topic_similarity_evaluator | 0.89 |
+| feedback.problem_correctness | 0.85 |
+| feedback.solution_correctness | 0.82 |
+| execution_time | 1.45 |
