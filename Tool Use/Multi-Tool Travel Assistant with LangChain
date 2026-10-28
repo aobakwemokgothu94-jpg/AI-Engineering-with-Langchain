@@ -1,0 +1,82 @@
+Multi-Tool Travel Assistant with LangChain
+This project builds an advanced, LLM-powered Travel Assistant using LangChain. By combining custom Python functions and pre-built ecosystem tools, the assistant overcomes the three fundamental LLM limitations: Knowledge gaps (live search and database queries), Capability gaps (precise arithmetic), and Action gaps.
+
+🚀 Key Features
+Custom Function Tools (@tool): Exposes proprietary or custom business logic (e.g., hotel database lookups and exact tax calculations) to the LLM via decorated Python functions.
+
+Pre-Built Community Tools (langchain_community): Integrates robust, ready-to-use packages like DuckDuckGoSearchResults for real-time web lookups without custom scraper setup.
+
+Parallel Tool Execution: Automatically handles multi-tool requests where the LLM evaluates user inputs and dispatches multiple independent tool calls (e.g., calculating totals for multiple hotels) within a single turn.
+
+Dynamic Information Flow: Manages a robust multi-turn message sequence (SystemMessage, HumanMessage, AIMessage, and ToolMessage) enabling context-aware, sequential reasoning (e.g., searching the web for an event date before querying accommodations).
+
+📂 Code Architecture
+Python
+from datetime import datetime, timedelta
+from langchain_community.tools import DuckDuckGoSearchResults
+
+# 1. Custom Hotel Search Tool
+@tool
+def query_hotels(city: str, check_in: str, check_out: str) -> str:
+    """Search for available hotels by city and dates."""
+    # ... database query logic ...
+
+# 2. Custom Cost Calculator Tool
+@tool
+def calculate_total_cost(price_per_night: float, num_nights: int, tax_rate: float = 0.05) -> str:
+    """Calculate total hotel cost including taxes."""
+    # ... precise arithmetic logic ...
+
+# 3. Pre-built Web Search Tool
+web_search = DuckDuckGoSearchResults(name="web_search", output_format="list", num_results=5)
+
+# 4. Agent Architecture
+class TravelAssistant:
+    def __init__(self):
+        self.llm = init_chat_model("gpt-6-luna", model_provider="openai")
+        self.tools = {
+            "query_hotels": query_hotels,
+            "calculate_total_cost": calculate_total_cost,
+            "web_search": web_search,
+        }
+        self.llm_with_tools = self.llm.bind_tools(self.tools.values())
+        self.messages = []
+        
+        # System prompt defines tool guidance & behavior
+        self.system_prompt = """You are a helpful travel assistant that can search the web and find hotels..."""
+        self.messages.append(SystemMessage(content=self.system_prompt))
+
+    def chat(self, message: str):
+        self.messages.append(HumanMessage(content=message))
+        response = self.llm_with_tools.invoke(self.messages)
+        self.messages.append(response)
+
+        # Handle single, parallel, or sequential tool calls
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                tool = self.tools[tool_call["name"]]
+                tool_result = tool.invoke(tool_call)
+                self.messages.append(tool_result)
+
+            final_response = self.llm_with_tools.invoke(self.messages)
+            self.messages.append(final_response)
+🔄 Execution & Message Flow
+User Prompt: The user submits a natural language request (e.g., "Find me a hotel in Tokyo in time to witness this year's Marathon").
+
+Tool Selection (AI Message): The LLM analyzes the prompt against the bound tool schemas (docstrings and signatures), identifying the need for live web context. It emits a tool_calls payload.
+
+Execution & Tool Message: The assistant intercepts the call, executes web_search, and appends the structured results back into the history as a Tool Message.
+
+Sequential Reasoning: The LLM consumes the search results, determines the exact dates of the event, and dynamically issues a secondary tool call (query_hotels) for those specific dates.
+
+Final Synthesis: The assistant aggregates all underlying tool data into a cohesive, conversational final response.
+
+💡 Example Usage
+Python
+assistant = TravelAssistant()
+
+# Triggers web search for event dates, followed by hotel lookup
+assistant.chat("Find me a hotel in Tokyo in time to witness this year's Marathon")
+
+# Triggers parallel cost calculations for multiple properties
+assistant.chat("What would be the total cost including taxes for 3 nights at the first two hotels?")
