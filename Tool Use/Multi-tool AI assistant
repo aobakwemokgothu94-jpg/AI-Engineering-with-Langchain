@@ -1,0 +1,142 @@
+# 🌍 LLM Tool-Enabled Travel Assistant
+
+A robust, multi-tool AI assistant built using **Python**, **LangChain**, and **OpenAI**. This project bridges the foundational **knowledge** and **capability gaps** of Large Language Models by integrating live database querying and precise arithmetic calculation tools into an intelligent conversation loop.
+
+---
+
+## 🚀 Project Architecture & Tool Suite
+
+Standard LLMs face three primary limitations:
+1. **The Knowledge Gap**: Fixed training cutoffs prevent models from accessing live proprietary databases or external APIs.
+2. **The Capability Gap**: LLMs struggle with exact arithmetic, financial tax calculations, and structured data transformations.
+3. **The Action Gap**: Models can describe changes but cannot directly execute system modifications or bookings.
+
+This project addresses the **knowledge** and **capability gaps** by implementing two core tool categories:
+
+### 1. Information Retrieval Tool (`query_hotels`)
+* **Purpose**: Closes the knowledge gap by querying a live hotel booking API.
+* **Mechanism**: Automatically extracts city parameters and date ranges from user prompts, invokes the backend API, and returns formatted hotel options with pricing and ratings.
+
+### 2. Capability Extension Tool (`calculate_total_cost`)
+* **Purpose**: Closes the capability gap by performing precise financial computations.
+* **Mechanism**: Takes nightly rates, stay durations, and tax percentages to compute exact subtotals, taxes, and grand totals reliably without LLM calculation errors.
+
+---
+
+## 📋 Complete Source Code (`travel_assistant.py`)
+
+```python
+from datetime import datetime, timedelta
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, SystemMessage
+from langchain.chat_models import init_chat_model
+from langchain.tools import tool
+from dotenv import load_dotenv
+import requests
+
+load_dotenv()
+
+HOTEL_API_URL = "[https://hotel-booking-server-1085074390115.us-east4.run.app](https://hotel-booking-server-1085074390115.us-east4.run.app)"
+
+
+def search_hotels_db(city: str, check_in: str, check_out: str) -> str:
+    """Call the hotel booking API to search for available hotels."""
+    response = requests.get(
+        f"{HOTEL_API_URL}/hotels/search",
+        params={"city": city, "check_in": check_in, "check_out": check_out},
+    )
+    hotels = response.json()
+
+    if not hotels:
+        return "No hotels found matching your criteria."
+
+    formatted = []
+    for i, hotel in enumerate(hotels, 1):
+        formatted.append(
+            f"{i}. {hotel['name']} in {hotel['city']}"
+            f" - ${hotel['price_per_night']}/night"
+            f" - {hotel['rating']} stars"
+        )
+    return "\n".join(formatted)
+
+
+@tool
+def query_hotels(city: str, check_in: str, check_out: str) -> str:
+    """Search for available hotels in a city for given dates.
+
+    Args:
+        city: City name to search hotels in
+        check_in: Check-in date (YYYY-MM-DD)
+        check_out: Check-out date (YYYY-MM-DD)
+
+    Returns:
+        List of available hotels with pricing
+    """
+    return search_hotels_db(city, check_in, check_out)
+
+
+@tool
+def calculate_total_cost(
+    price_per_night: float, num_nights: int, tax_rate: float = 0.05
+) -> str:
+    """Calculate total hotel cost including taxes.
+
+    Args:
+        price_per_night: Hotel rate per night
+        num_nights: Number of nights
+        tax_rate: Tax rate (default 5%)
+
+    Returns:
+        Detailed cost breakdown
+    """
+    subtotal = price_per_night * num_nights
+    tax = subtotal * tax_rate
+    total = subtotal + tax
+
+    return f"""Cost Breakdown:
+- Rate: ${price_per_night:.2f} x {num_nights} nights = ${subtotal:.2f}
+- Tax ({tax_rate * 100}%): ${tax:.2f}
+- Total: ${total:.2f}"""
+
+
+class TravelAssistant:
+    def __init__(self):
+        self.llm = init_chat_model("gpt-6-luna", model_provider="openai")
+        self.tools = {
+            "query_hotels": query_hotels,
+            "calculate_total_cost": calculate_total_cost,
+        }
+        self.llm_with_tools = self.llm.bind_tools(self.tools.values())
+        self.messages = []
+
+        current_year = datetime.now().year
+
+        self.system_prompt = f"""You are a helpful travel assistant that 
+        can search for hotels, calculate stay costs, and help with trip planning. 
+        When users ask about hotels, use the query_hotels tool. 
+        When users ask for cost totals or pricing breakdowns, use the calculate_total_cost tool. 
+        Be conversational and helpful in your responses.
+        Your current year is {current_year}."""
+
+        self.messages.append(SystemMessage(content=self.system_prompt))
+
+    def chat(self, message: str):
+        self.messages.append(HumanMessage(content=message))
+        response = self.llm_with_tools.invoke(self.messages)
+        self.messages.append(response)
+
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                tool = self.tools[tool_call["name"]]
+                tool_result = tool.invoke(tool_call)
+                self.messages.append(tool_result)
+
+            final_response = self.llm_with_tools.invoke(self.messages)
+            self.messages.append(final_response)
+📊 Sample Cost Calculation Output
+When testing the calculate_total_cost tool independently (e.g., 3 nights at $150.00/night with a 7% tax rate):
+
+Plaintext
+Cost Breakdown:
+- Rate: $150.00 x 3 nights = $450.00
+- Tax (7.00%): $31.50
+- Total: $481.50
