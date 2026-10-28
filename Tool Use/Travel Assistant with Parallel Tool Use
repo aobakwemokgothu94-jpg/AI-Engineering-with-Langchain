@@ -1,0 +1,64 @@
+Travel Assistant with Parallel Tool Use
+This project demonstrates an LLM-powered Travel Assistant built with LangChain that can search for hotels, calculate costs with taxes, and execute multiple tool calls in parallel within a multi-turn conversation.
+
+🚀 Overview
+Large Language Models (LLMs) excel at natural language understanding and generation, but they face inherent limitations when it comes to real-time knowledge, precise arithmetic, and external actions. This application bridges those gaps by equipping an LLM with custom Python tools:
+
+Hotel Search (query_hotels): Closes the knowledge gap by querying a database for live hotel availability, pricing, and ratings.
+
+Cost Calculator (calculate_total_cost): Closes the capability gap by performing precise arithmetic for nightly rates, durations, and taxes.
+
+🛠️ Key Features
+Tool Binding (.bind_tools): Dynamically attaches Python functions (along with their signatures, type hints, and docstrings) to the LLM so it knows when and how to invoke them.
+
+Parallel Tool Execution: Automatically handles scenarios where the LLM requests multiple independent tool calls in a single turn (e.g., calculating totals for multiple hotels simultaneously).
+
+Robust Message Flow: Manages a structured conversation history using SystemMessage, HumanMessage, AIMessage (with tool_calls), and ToolMessage results.
+
+📂 Code Structure
+Python
+from datetime import datetime, timedelta
+# Import your chat model and messaging primitives (e.g., LangChain / OpenAI)
+
+# 1. Define custom tools using the @tool decorator
+@tool
+def calculate_total_cost(price_per_night: float, num_nights: int, tax_rate: float = 0.05) -> str:
+    """Calculate total hotel cost including taxes."""
+    # ... calculation logic ...
+    
+# 2. Initialize the TravelAssistant agent
+class TravelAssistant:
+    def __init__(self):
+        self.llm = init_chat_model("gpt-6-luna", model_provider="openai")
+        self.tools = {
+            "query_hotels": query_hotels,
+            "calculate_total_cost": calculate_total_cost,
+        }
+        self.llm_with_tools = self.llm.bind_tools(self.tools.values())
+        self.messages = []
+        # ... setup system prompt & history ...
+
+    def chat(self, message: str):
+        # Handles user input, tool execution loops, and final responses
+        ...
+🔄 Execution Flow
+User Request: The user asks a question (e.g., "Find me a hotel in Tokyo...").
+
+Tool Selection (AI Message): The LLM evaluates the prompt and returns a tool call with extracted arguments (city, check_in, etc.).
+
+Tool Execution (Tool Message): The system catches response.tool_calls, executes the corresponding Python function(s), and appends the output as a Tool Message.
+
+Parallel Handling: If the user requests independent multi-item calculations, the assistant loops through all generated tool calls concurrently, appending each result back into the message history.
+
+Final Synthesis: The LLM consumes the tool outputs and produces a friendly, formatted response for the user.
+
+💡 Example Usage
+Python
+assistant = TravelAssistant()
+next_week = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+
+# 1. Triggers single hotel search tool call
+assistant.chat(f"Find me a hotel in Tokyo for {next_week}")
+
+# 2. Triggers parallel tool calls for cost calculation
+assistant.chat("What would be the total cost including taxes for 3 nights at the first two hotels?")
