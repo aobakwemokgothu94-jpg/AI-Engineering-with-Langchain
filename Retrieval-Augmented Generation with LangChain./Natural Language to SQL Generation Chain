@@ -1,0 +1,38 @@
+Natural Language to SQL Generation Chain
+This project demonstrates how to build a Structured RAG (Retrieval-Augmented Generation) component using LangChain and an LLM. It automatically translates natural language user queries (such as hotel searches) into valid, optimized SQLite queries by leveraging the database schema and sample data.
+
+Features
+Context-Aware Prompt Engineering: Defines a strict prompt template that forces the LLM to output only executable SQLite statements following best practices (e.g., proper table joins, lowercase text matching for amenities, and LIMIT clauses).
+
+Dynamic Schema Injection: Uses LangChain's partial_variables to bake the database schema directly into the prompt template once, leaving the user_query as the sole dynamic runtime input.
+
+LangChain Expression Language (LCEL): Connects the prompt template and the chat model using the pipe operator (|) to create a streamlined execution pipeline.
+
+Code Overview
+Python
+# 1. Define the SQL generation prompt template
+generate_sql_prompt_template_str = """..."""
+
+generate_sql_prompt = PromptTemplate(
+    template=generate_sql_prompt_template_str,
+    input_variables=["user_query"],
+    partial_variables={"database_schema": db_info},
+)
+
+# 2. Initialize the chat model
+model = init_chat_model("openai:gpt-6-luna")
+
+# 3. Build the chain using the pipe operator
+generate_sql = generate_sql_prompt | model
+
+# 4. Invoke the chain with a natural language query
+user_query = "Looking for places to stay in Tokyo that have hot springs between March 3-10 next year"
+result = generate_sql.invoke({"user_query": user_query})
+
+print(result.text)
+How It Works
+Prompt Template Setup: The template instructs the LLM to act as a SQLite expert, establishing strict rules regarding output format (no conversational filler, double-quoted column identifiers) and date handling relative to the current year (2025).
+
+Pipeline Execution (|): The prompt and model are linked into a single executable object. When .invoke() is called, the natural language query and pre-filled schema flow into the prompt, format automatically, and get sent directly to the LLM.
+
+Generated Output: The model successfully interprets constraints like location (Tokyo), amenities (hot spring / onsen), date availability (using NOT EXISTS subqueries against room_reservation), and sorting preferences into a clean SQL statement.
