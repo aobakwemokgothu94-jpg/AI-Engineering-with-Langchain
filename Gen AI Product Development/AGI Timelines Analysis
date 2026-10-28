@@ -1,0 +1,86 @@
+# Lex Fridman Podcast Semantic RAG Pipeline: AGI Timelines Analysis
+
+An end-to-end Retrieval-Augmented Generation (RAG) application built with [LangChain](https://www.langchain.com/) and [FAISS](https://github.com/facebookresearch/faiss). This pipeline queries a vector database of Lex Fridman podcast transcripts to synthesize expert predictions on complex topics like Artificial General Intelligence (AGI) timelines.
+
+## Project Overview
+
+1. **Knowledge Retrieval (`FAISS`)**: Loads a local vector store containing pre-embedded podcast transcripts. When a query (e.g., *"What are predicted timelines for AGI?"*) is submitted, it performs a semantic similarity search to pull the top $k=10$ most relevant transcript chunks.
+2. **Prompt Engineering (`PromptTemplate`)**: Formats the retrieved context and user question into an expert analyst framework defined in `prompt.md`, instructing the LLM to group viewpoints, provide direct quotes, and maintain strict source attribution.
+3. **Response Generation (`ChatModel`)**: Combines retrieval and generation using LangChain Expression Language (LCEL) (`semantic_rag = retrieve_knowledge | generate_response`) to generate structured, balanced perspectives.
+
+---
+
+## Project Structure
+
+```text
+├── data/
+│   └── retrieval-augmented-generation/
+│       └── semantic-retrieval/     # FAISS vector store files
+├── prompt.md                       # Expert perspective synthesis prompt template
+├── rag.py                          # Main Python RAG pipeline script
+├── requirements.txt                # Project dependencies
+└── README.md                       # Project documentation
+Prerequisites & Installation
+Make sure you have Python 3.10+ installed and install the required dependencies:
+
+Bash
+pip install langchain langchain-community langchain-openai faiss-cpu python-dotenv
+Environment Setup
+Create a .env file in your root directory and add your OpenAI API key:
+
+Code snippet
+OPENAI_API_KEY=your_openai_api_key_here
+Usage
+To run the pipeline and analyze expert opinions on AGI timelines:
+
+Update the question variable in rag.py:
+
+Python
+question = "What are predicted timelines for AGI?"
+Execute the script:
+
+Bash
+python rag.py
+Example Code (rag.py)
+Python
+from langchain_community.vectorstores import FAISS
+from langchain.chat_models import init_chat_model
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.prompts import PromptTemplate
+from dotenv import load_dotenv
+import textwrap
+
+load_dotenv()
+
+# 1. Load FAISS Vector Store
+vector_store_path = "data/retrieval-augmented-generation/semantic-retrieval"
+vector_store = FAISS.load_local(
+    vector_store_path,
+    embeddings=OpenAIEmbeddings(),
+    allow_dangerous_deserialization=True,
+)
+
+# 2. Define Knowledge Retrieval Function
+def retrieve_knowledge(input: dict, k=10) -> dict:
+    return {
+        "context": vector_store.similarity_search(input["question"], k=k),
+        "question": input["question"],
+    }
+
+# 3. Load Prompt Template & Model
+with open("prompt.md", "r") as f:
+    prompt_template_str = f.read()
+
+prompt = PromptTemplate(
+    template=prompt_template_str, input_variables=["question", "context"]
+)
+model = init_chat_model(model="gpt-6-luna")
+
+# 4. Build Pipeline & Execute
+semantic_rag = retrieve_knowledge | (prompt | model)
+
+question = "What are predicted timelines for AGI?"
+result = semantic_rag.invoke({"question": question})
+
+for line in result.text.split("\n"):
+    print(textwrap.fill(line, width=80) if line.strip() else "")
