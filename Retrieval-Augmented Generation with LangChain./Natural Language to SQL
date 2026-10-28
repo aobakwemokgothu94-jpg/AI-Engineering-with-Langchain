@@ -1,0 +1,54 @@
+Structured RAG Retrieval Pipeline (Natural Language to SQL)
+This project implements the Retrieve phase of a Retrieval-Augmented Generation (RAG) architecture. It allows users to query a relational SQLite database (hotels.db) using natural language, automatically translates those requests into validated SQL statements, and safely executes them to return results as a Pandas DataFrame.
+
+Features
+Schema-Aware Query Generation: Uses LangChain prompt templates combined with the database schema and 3 sample rows to help the LLM generate accurate, context-aware SQLite statements.
+
+Pipeline Cleaning & Sanitization (clean_sql): Extracts the raw SQL text string from LangChain's AIMessage object and strips out markdown code block fences (```sql).
+
+Security Firewall (validate_sql): Inspects the generated SQL query for dangerous operations (DROP, DELETE, TRUNCATE, ALTER, CREATE, INSERT, UPDATE) to protect the underlying database.
+
+Execution & DataFrame Conversion (execute_sql): Safely connects to the SQLite database via Pandas and sqlite3 to fetch matching records.
+
+LangChain Expression Language (LCEL): Chains the components together cleanly using the pipe operator (|):
+
+generate_sql
+∣
+clean_sql
+∣
+validate_sql
+∣
+execute_sql
+generate_sql∣clean_sql∣validate_sql∣execute_sql
+Code Overview
+Python
+# 1. Clean the LLM message response into a string
+def clean_sql(sql_query: AIMessage):
+    return sql_query.text.replace("```sql", "").replace("```", "").strip()
+
+# 2. Validate the SQL query for safety
+def validate_sql(sql_query: str) -> str:
+    dangerous_keywords = ["DROP", "DELETE", "TRUNCATE", "ALTER", "CREATE", "INSERT", "UPDATE"]
+    for keyword in dangerous_keywords:
+        if keyword in sql_query.upper():
+            raise ValueError(f"Query validation failed: {keyword} operations not allowed")
+    return sql_query
+
+# 3. Execute the validated SQL query against SQLite
+def execute_sql(sql_query: str):
+    with sqlite3.connect(db_path) as conn:
+        return pd.read_sql_query(sql_query, conn)
+
+# 4. Build and run the complete retrieval chain
+retrieve_knowledge = generate_sql | clean_sql | validate_sql | execute_sql
+
+result = retrieve_knowledge.invoke({"user_query": user_query})
+print(result)
+How It Works
+Generation: The generate_sql chain evaluates the user's natural language request (e.g., finding Tokyo hotels with hot springs for specific dates) using the injected schema context.
+
+Cleaning: clean_sql takes the resulting AIMessage and strips formatting artifacts so it becomes executable SQL.
+
+Validation: validate_sql acts as a security check, throwing an error if any prohibited database modification commands are detected.
+
+Execution: execute_sql runs the query and returns a structured Pandas DataFrame containing the matching inventory items, ready to be passed into the Augment and Generate phases of the RAG pipeline.
