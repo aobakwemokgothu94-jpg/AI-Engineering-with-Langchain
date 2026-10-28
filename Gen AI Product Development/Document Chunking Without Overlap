@@ -1,0 +1,46 @@
+Document Chunking Without Overlap (LangChain RAG Pipeline)
+This snippet demonstrates the initial text-splitting phase of a semantic Retrieval-Augmented Generation with LangChain preprocessing pipeline using RecursiveCharacterTextSplitter.
+
+In unstructured document workflows (such as processing long-form podcast transcripts, research reports, or PDFs), documents are often too large to fit within an LLM's context window or too granular to yield precise semantic search results. This script breaks down raw documents into smaller, uniform segments while deliberately setting the chunk overlap to zero to highlight why boundary management matters.
+
+Prerequisites & Dependencies
+Python 3.8+
+
+langchain-text-splitters library
+
+Install the required package via pip:
+
+Bash
+pip install langchain-text-splitters
+Code Overview
+Python
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# Initialize the text splitter with a 1000-character limit and 0 overlap
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+
+# Split the loaded documents into chunks
+all_splits = text_splitter.split_documents(docs)
+
+# Output metrics and boundary samples
+print(f"Created {len(all_splits)} chunks without overlap")
+print(f"\nEnd of first chunk: ...{all_splits[0].page_content[-250:]}")
+print(f"\nStart of second chunk: {all_splits[1].page_content[:250]}...")
+How It Works
+RecursiveCharacterTextSplitter: This splitter attempts to split text recursively along natural boundaries (such as paragraphs, newlines, sentences, and words) until each chunk satisfies the target size constraints.
+
+chunk_size=1000: Restricts the maximum length of any single text chunk to 1,000 characters.
+
+chunk_overlap=0: Disables sliding-window overlap between adjacent chunks.
+
+Note on trade-offs: While setting overlap to zero ensures no redundant text is stored, it frequently results in sentences or thoughts getting abruptly cut off at boundaries (e.g., ending a chunk mid-sentence), which can occasionally obscure context during vector similarity retrieval.
+
+Output Example
+When executed against a large corpus of documents (such as 319 long-form transcripts), the script produces metrics and boundary previews:
+
+Plaintext
+Created 38096 chunks without overlap
+
+End of first chunk: ... the little bell icon to make sure you don't miss any videos. Also, Twitter, LinkedIn, agi.mit.edu if you wanna watch other lectures or conversations like this one. Better yet, go read Max's book, Life 3.0. Chapter seven on goals is my favorite. It's
+
+Start of second chunk: really where philosophy and engineering come together and it opens with a quote by Dostoevsky. The mystery of human existence lies not in just staying alive but in finding something to live for. Lastly, I believe that every failure rewards us with an...
