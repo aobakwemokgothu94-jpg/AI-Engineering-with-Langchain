@@ -1,0 +1,23 @@
+Project Overview: Structured RAG Hotel Search Pipeline
+This project demonstrates how to build an end-to-end Retrieval-Augmented Generation (RAG) pipeline using LangChain to bridge natural language queries with a relational SQL database. Instead of searching unstructured text documents, the system translates user intents into precise database queries to fetch live inventory and availability data.
+
+Core Components & Workflow
+Retrieval Phase (retrieve_knowledge)
+
+Schema Inspection: Utilizes LangChain's database utility to understand tables (hotel, hotel_room, room_reservation) and their relationships.
+
+Text-to-SQL Conversion: Takes the user's natural language request (e.g., searching for hotels with hot springs in Tokyo for specific dates) and generates an executable SQLite query.
+
+Execution & Guardrails: Validates the generated SQL for safety, queries the database, and returns the structured records as a Pandas DataFrame.
+
+Augmentation Phase (format_results_for_llm)
+
+Converts the resulting tabular DataFrame into a clean, LLM-readable string format (to_string(index=False)).
+
+Binds dynamic parameters (such as the original user query and schema templates) to prompt templates using partial variable injection.
+
+Generation Phase (generate_response)
+
+Passes the retrieved hotel data and constraints through a structured prompt template instructing the model to adopt a welcoming, structured tone.
+
+Outputs a formatted response highlighting hotel names, locations, unique features (e.g., natural hot springs), room pricing tiers, and capacity details.
