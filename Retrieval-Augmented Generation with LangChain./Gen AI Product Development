@@ -1,0 +1,82 @@
+# Lex Fridman Podcast Semantic RAG Pipeline
+
+An end-to-end Retrieval-Augmented Generation (RAG) application built with [LangChain](https://www.langchain.com/) and [FAISS](https://github.com/facebookresearch/faiss). This system turns unstructured podcast transcript archives into an expert consultation tool, allowing you to ask open-ended questions and receive structured, fully-attributed syntheses of perspectives from world-class experts.
+
+## Architecture Overview
+
+1. **Knowledge Retrieval (`FAISS`)**: Loads a local vector database containing pre-embedded podcast transcript chunks. When a query is submitted, it performs a semantic similarity search to retrieve the $k=10$ most relevant passages.
+2. **Prompt Engineering (`PromptTemplate`)**: Injects the retrieved context and user question into a strict expert analyst framework defined in `prompt.md`.
+3. **Response Generation (`ChatModel`)**: Combines retrieval and generation using LangChain Expression Language (LCEL) (`prompt | model`) to synthesize balanced expert viewpoints, areas of consensus/disagreement, and direct quotes with proper attribution.
+
+---
+
+## Project Structure
+
+```text
+├── data/
+│   └── retrieval-augmented-generation/
+│       └── semantic-retrieval/     # FAISS vector store local files
+├── prompt.md                       # Expert perspective synthesis prompt template
+├── rag.py                          # Main Python RAG pipeline script
+├── requirements.txt                # Project dependencies
+└── README.md                       # Project documentation
+Prerequisites
+Make sure you have Python 3.10+ installed along with the required libraries:
+
+Bash
+pip install langchain langchain-community langchain-openai faiss-cpu python-dotenv
+Environment Setup
+Create a .env file in the root directory of your project and add your OpenAI API key:
+
+Code snippet
+OPENAI_API_KEY=your_openai_api_key_here
+Usage
+Ensure your local FAISS vector store is located at data/retrieval-augmented-generation/semantic-retrieval.
+
+Run the RAG pipeline script:
+
+Bash
+python rag.py
+Example Code (rag.py)
+Python
+from langchain_community.vectorstores import FAISS
+from langchain.chat_models import init_chat_model
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.prompts import PromptTemplate
+from dotenv import load_dotenv
+import textwrap
+
+load_dotenv()
+
+# 1. Load FAISS Vector Store
+vector_store_path = "data/retrieval-augmented-generation/semantic-retrieval"
+vector_store = FAISS.load_local(
+    vector_store_path,
+    embeddings=OpenAIEmbeddings(),
+    allow_dangerous_deserialization=True,
+)
+
+# 2. Define Knowledge Retrieval Function
+def retrieve_knowledge(input: dict, k=10) -> dict:
+    return {
+        "context": vector_store.similarity_search(input["question"], k=k),
+        "question": input["question"],
+    }
+
+# 3. Load Prompt Template & Model
+with open("prompt.md", "r") as f:
+    prompt_template_str = f.read()
+
+prompt = PromptTemplate(
+    template=prompt_template_str, input_variables=["question", "context"]
+)
+model = init_chat_model(model="gpt-4o") # Update to your preferred active model
+
+# 4. Build Pipeline & Execute
+semantic_rag = retrieve_knowledge | (prompt | model)
+
+question = "What is artificial intelligence?"
+result = semantic_rag.invoke({"question": question})
+
+for line in result.text.split("\n"):
+    print(textwrap.fill(line, width=80) if line.strip() else "")
