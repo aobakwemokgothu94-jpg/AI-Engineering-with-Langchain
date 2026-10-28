@@ -1,0 +1,155 @@
+# 🌍 LLM Tool-Enabled Travel Assistant
+
+A foundational implementation of an AI agent capable of dynamic tool execution, built using **Python**, **LangChain**, and **OpenAI**. 
+
+This project demonstrates how to bridge the **knowledge and capability gaps** of Large Language Models by wrapping custom Python business logic into executable tools that the model can invoke autonomously during multi-turn conversations.
+
+---
+
+## 🚀 Project Overview & Objectives
+
+Standard LLMs suffer from three core limitations:
+1. **The Knowledge Gap**: Fixed knowledge cutoffs prevent models from seeing proprietary databases or live APIs.
+2. **The Capability Gap**: LLMs struggle with precise mathematical computations and structured data manipulation.
+3. **The Action Gap**: Models can describe changes but cannot directly interact with external systems.
+
+This project addresses the **knowledge and capability gaps** by implementing a Travel Assistant that queries a live hotel database on-demand, manages structured message histories, and formats clean, conversational responses for users.
+
+---
+
+## 🛠️ Architecture & Core Components
+
+### 1. Custom Tool Definition (`@tool`)
+Standard Python functions are decorated with LangChain's `@tool` decorator. Type hints and descriptive docstrings are used to automatically generate JSON schemas that instruct the LLM on *when* and *how* to invoke the function.
+
+```python
+@tool
+def query_hotels(city: str, check_in: str, check_out: str) -> str:
+    """Search for available hotels in a city for given dates.
+
+    Args:
+        city: City name to search hotels in
+        check_in: Check-in date (YYYY-MM-DD)
+        check_out: Check-out date (YYYY-MM-DD)
+
+    Returns:
+        List of available hotels with pricing
+    """
+    return search_hotels_db(city, check_in, check_out)
+2. Tool Binding (.bind_tools())
+The base chat model is bound to the available tool dictionary via .bind_tools(), exposing tool definitions directly to the model's generation loop.
+
+3. Agent Execution Loop
+The TravelAssistant class manages a continuous conversation history (self.messages) utilizing four distinct message types:
+
+System Message: Establishes the agent's persona, operational rules, and dynamic context (e.g., current_year).
+
+Human Message: Captures natural language user prompts.
+
+AI Message: Holds model outputs, which may include structured tool_calls requests.
+
+Tool Message: Appends raw execution results from local Python functions back into the conversation history, enabling the model to synthesize a final answer.
+
+📋 Full Source Code (travel_assistant.py)
+Python
+from datetime import datetime, timedelta
+from langchain_core.tools import tool
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain.chat_models import init_chat_model
+
+@tool
+def query_hotels(city: str, check_in: str, check_out: str) -> str:
+    """Search for available hotels in a city for given dates.
+
+    Args:
+        city: City name to search hotels in
+        check_in: Check-in date (YYYY-MM-DD)
+        check_out: Check-out date (YYYY-MM-DD)
+
+    Returns:
+        List of available hotels with pricing
+    """
+    return search_hotels_db(city, check_in, check_out)
+
+
+class TravelAssistant:
+    def __init__(self):
+        self.llm = init_chat_model("gpt-6-luna", model_provider="openai")
+        self.tools = {"query_hotels": query_hotels}
+        self.llm_with_tools = self.llm.bind_tools(self.tools.values())
+        self.messages = []
+
+        current_year = datetime.now().year
+
+        # System prompt with dynamic year injection
+        self.system_prompt = f"""You are a helpful travel assistant that 
+        can search for hotels and help with trip planning. When users 
+        ask about hotels, use the query_hotels tool to search our database. Be conversational and helpful in your responses.
+        Your current year is {current_year}."""
+
+        self.messages.append(SystemMessage(content=self.system_prompt))
+
+    def chat(self, message: str):
+        # 1. Append user message
+        self.messages.append(HumanMessage(content=message))
+
+        # 2. Get AI response with potential tool calls
+        response = self.llm_with_tools.invoke(self.messages)
+        self.messages.append(response)
+
+        # 3. Check if tools were requested
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                tool = self.tools[tool_call["name"]]
+                tool_result = tool.invoke(tool_call)
+                self.messages.append(tool_result)
+
+            # 4. Get final response after tool execution
+            final_response = self.llm_with_tools.invoke(self.messages)
+            self.messages.append(final_response)
+
+
+# Example execution
+if __name__ == "__main__":
+    assistant = TravelAssistant()
+    next_week = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+    assistant.chat(f"Find me a hotel in Tokyo for one night on {next_week}")
+    
+    for msg in assistant.messages:
+        msg.pretty_print()
+📊 Sample Execution Trace
+Plaintext
+================================ System Message ================================
+You are a helpful travel assistant that can search for hotels and help with trip planning...
+Your current year is 2026.
+
+================================ Human Message =================================
+Find me a hotel in Tokyo for one night on 2026-11-04
+
+================================== Ai Message ==================================
+Tool Calls:
+  query_hotels (call_Ib17cC4alWNz4lqZSQPzt7VQ)
+  Args:
+    city: Tokyo
+    check_in: 2026-11-04
+    check_out: 2026-11-05
+
+================================= Tool Message =================================
+Name: query_hotels
+1. Tokyo Grand Hotel in Tokyo - $150.0/night - 4.0 stars
+2. Sakura Onsen Resort in Tokyo - $180.0/night - 4.0 stars
+3. Tokyo Business Hotel in Tokyo - $120.0/night - 4.0 stars
+4. Imperial Palace Hotel in Tokyo - $250.0/night - 4.0 stars
+5. Zen Garden Hotel in Tokyo - $200.0/night - 4.0 stars
+
+================================== Ai Message ==================================
+Here are available Tokyo hotels for **November 4–5, 2026**:
+- **Tokyo Business Hotel** — $120/night, 4 stars
+- **Tokyo Grand Hotel** — $150/night, 4 stars
+...
+🗺️ Roadmap & Future Enhancements
+[ ] Cost Calculator Tool: Integrate exact financial calculations (taxes, fees, and multi-night totals).
+
+[ ] Web Search & Weather Integration: Incorporate live data APIs for local events and forecasts.
+
+[ ] Action Execution / Booking: Implement transactional database writes to close the action gap.
