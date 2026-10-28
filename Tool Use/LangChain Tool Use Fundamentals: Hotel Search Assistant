@@ -1,0 +1,77 @@
+# LangChain Tool Use Fundamentals: Hotel Search Assistant
+
+A foundational implementation of LLM tool use using **LangChain** and Python. This project demonstrates how to wrap existing programmatic functions into dynamic tools that an LLM can invoke to bridge the "knowledge gap."
+
+## 🚀 Project Overview
+
+Large Language Models (LLMs) possess powerful reasoning capabilities but suffer from a **knowledge cutoff**—they cannot see real-time data, proprietary databases, or external APIs. 
+
+This project implements the first step of a comprehensive **Travel Booking Assistant** by exposing a custom hotel database query function as an LLM-compatible tool using LangChain's `@tool` decorator.
+
+---
+
+## 🛠️ Features & Architecture
+
+* **Custom Tool Wrapping**: Converts standard Python database search functions into LangChain-compliant tools.
+* **Type-Hinted Signatures**: Leverages Python type annotations to automatically provide structured argument schemas to the LLM.
+* **Descriptive Docstrings**: Optimized docstrings that guide the LLM on *what* the tool does and *when* to invoke it.
+* **Live Database Querying**: Fetches real-time hotel availability, pricing, and ratings for specified cities and date ranges.
+
+---
+
+## 📋 Code Implementation
+
+Here is the core tool definition and test invocation logic:
+
+```python
+from datetime import datetime, timedelta
+from langchain_core.tools import tool
+
+@tool
+def query_hotels(city: str, check_in: str, check_out: str) -> str:
+    """Search for available hotels in a city for given dates.
+
+    Args:
+        city: City name to search hotels in
+        check_in: Check-in date (YYYY-MM-DD)
+        check_out: Check-out date (YYYY-MM-DD)
+
+    Returns:
+        List of available hotels with pricing
+    """
+    return search_hotels_db(city, check_in, check_out)
+
+# Calculate date range for next week
+next_week = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+next_week_plus_one = (datetime.now() + timedelta(days=8)).strftime("%Y-%m-%d")
+
+# Test tool invocation
+print(
+    query_hotels.invoke(
+        {"city": "Tokyo", "check_in": next_week, "check_out": next_week_plus_one}
+    )
+)
+📊 Sample Output
+When invoked for a stay in Tokyo, the tool successfully returns structured pricing and rating data:
+
+Plaintext
+1. Tokyo Grand Hotel in Tokyo - $150.0/night - 4.0 stars
+2. Sakura Onsen Resort in Tokyo - $180.0/night - 4.0 stars
+3. Tokyo Business Hotel in Tokyo - $120.0/night - 4.0 stars
+4. Imperial Palace Hotel in Tokyo - $250.0/night - 4.0 stars
+5. Zen Garden Hotel in Tokyo - $200.0/night - 4.0 stars
+🎓 Key Learnings: Anatomy of a Tool
+The Decorator (@tool): Intercepts standard Python functions and formats them into JSON-schema-compatible tools that LangChain models can recognize.
+
+Type Hints: Explicitly defines parameters (str) so the LLM knows precisely what arguments to provide.
+
+The Docstring: Acts as the "prompt" for the LLM. Because the model never sees your raw code, a precise docstring directly impacts whether the model selects and executes the tool correctly.
+
+🗺️ Roadmap / Next Steps
+This project is built step-by-step. Future iterations will include:
+
+[ ] Cost Calculator Tool: Closing the capability gap by computing exact stay totals, taxes, and fees.
+
+[ ] Web Search & Weather Integration: Closing the knowledge gap for local events and forecasts.
+
+[ ] Room Booking Tool: Closing the action gap by completing reservations directly within the chat conversation.
