@@ -1,0 +1,44 @@
+Document Chunking With Overlap (LangChain RAG Pipeline)
+This snippet demonstrates the updated text-splitting phase of a semantic Retrieval-Augmented Generation with LangChain preprocessing pipeline using RecursiveCharacterTextSplitter configured with a sliding overlap window.
+
+Building upon unstructured data workflows (such as long-form podcast transcripts or reference documents), this script breaks down raw corpora into smaller, manageable chunks while preserving contextual continuity across boundaries.
+
+Prerequisites & Dependencies
+Python 3.8+
+
+langchain-text-splitters library
+
+Install the required package via pip:
+
+Bash
+pip install langchain-text-splitters
+Code Overview
+Python
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# Initialize the text splitter with a 1000-character limit and a 200-character overlap
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+
+# Split the loaded documents into overlapping chunks
+all_splits = text_splitter.split_documents(docs)
+
+# Output metrics and boundary samples
+print(f"Created {len(all_splits)} chunks with overlap")
+print(f"\nEnd of first chunk: ...{all_splits[0].page_content[-250:]}")
+print(f"\nStart of second chunk: {all_splits[1].page_content[:250]}...")
+How It Works
+RecursiveCharacterTextSplitter: Recursively splits text along natural boundaries (paragraphs, newlines, sentences, words) to adhere strictly to target character limits without tearing words apart prematurely.
+
+chunk_size=1000: Caps the maximum size of any individual chunk at 1,000 characters to ensure efficient embedding generation and context-window compatibility.
+
+chunk_overlap=200: Introduces a sliding window where adjacent chunks share up to 200 characters of repeated text. This guarantees that thoughts or sentences split near a boundary retain surrounding context in both adjacent chunks, improving semantic search accuracy.
+
+Output Example
+When executed against the corpus (such as 319 long-form transcripts), the script generates increased chunk counts due to the sliding window, alongside seamless boundary transitions:
+
+Plaintext
+Created 47373 chunks with overlap
+
+End of first chunk: ... the little bell icon to make sure you don't miss any videos. Also, Twitter, LinkedIn, agi.mit.edu if you wanna watch other lectures or conversations like this one. Better yet, go read Max's book, Life 3.0. Chapter seven on goals is my favorite. It's
+
+Start of second chunk: videos. Also, Twitter, LinkedIn, agi.mit.edu if you wanna watch other lectures or conversations like this one. Better yet, go read Max's book, Life 3.0. Chapter seven on goals is my favorite. It's really where philosophy and engineering come together...
