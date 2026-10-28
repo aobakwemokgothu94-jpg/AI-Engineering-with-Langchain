@@ -1,0 +1,48 @@
+AI-Powered SQL Generation and Retrieval System
+This project is part of a Retrieval-Augmented Generation (RAG) pipeline built using Python, LangChain, and SQLite. It translates natural language search requests (such as finding hotels with specific features and dates) into valid SQL queries by leveraging an LLM paired with the underlying database schema and sample data.
+
+Features
+Automated Schema Extraction: Connects to a SQLite database and extracts table definitions alongside representative sample rows to maximize LLM query accuracy.
+
+Prompt-Driven SQL Generation: Uses custom PromptTemplate configurations to guide the LLM on syntax rules, security best practices, date references, and formatting requirements.
+
+LangChain Expression Language (LCEL): Implements a clean, pipe-delimited (|) data pipeline connecting the prompt template directly to the chat model.
+
+Prerequisites
+Make sure you have Python installed along with the required libraries.
+
+Bash
+pip install langchain langchain-core langchain-community pandas python-dotenv
+Project Structure
+Plaintext
+├── data/
+│   └── retrieval-augmented-generation/
+│       └── structured-retrieval/
+│           └── hotels.db         # SQLite database file containing hotels, rooms, and reservations
+├── .env                          # Environment variables (e.g., API keys)
+└── main.py                       # Main execution script
+How It Works
+Database Connection:
+The script initializes a connection to the SQLite database using LangChain's SQLDatabase utility.
+
+Python
+db = SQLDatabase.from_uri(f"sqlite:///{db_path}")
+db_info = db.get_table_info()  # Extracts schema and sample rows
+Prompt Construction:
+A strict prompt template is defined to ensure the LLM outputs clean, executable, and safe SQLite statements (utilizing LIMIT clauses, double-quoted column identifiers, and dynamic date calculations).
+
+Chain Execution:
+The prompt and chat model are chained together using LCEL, and a natural language query is passed to generate the final SQL code:
+
+Python
+generate_sql = generate_sql_prompt | model
+result = generate_sql.invoke({"user_query": user_query})
+Usage
+Ensure your .env file contains your necessary API keys (e.g., OpenAI API key).
+
+Verify that the hotels.db file exists at the specified relative path.
+
+Run the script:
+
+Bash
+python main.py
