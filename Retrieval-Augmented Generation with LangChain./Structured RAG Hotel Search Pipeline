@@ -1,0 +1,86 @@
+Structured RAG Hotel Search Pipeline
+An end-to-end Retrieval-Augmented Generation (RAG) application built with LangChain, SQLite, Pandas, and a chat model. This pipeline bridges natural language user queries with a relational database by dynamically translating text into validated SQL, executing secure database queries, and transforming structured results into friendly, formatted natural language responses.
+
+🏗️ Architecture & Pipeline Flow
+The application operates through three core phases:
+
+Retrieve Phase:
+
+Schema Extraction: Inspects the database tables (hotel, hotel_room, room_reservation) along with representative sample rows using LangChain's SQLDatabase utility.
+
+Query Generation: Uses an LLM prompt instructed with database schema context and current year logic to generate a valid SQLite query from natural language.
+
+Query Validation & Cleaning: Strips markdown formatting and acts as a security guardrail to block dangerous operations (DROP, DELETE, UPDATE) before execution.
+
+Query Execution: Connects to the SQLite database, executes the validated SQL query, and returns records as a Pandas DataFrame.
+
+Augment Phase:
+
+Result Formatting: Converts the resulting DataFrame into a readable string format using custom helper functions, handling edge cases such as empty query results.
+
+Context Integration: Pre-fills static parameters (like the original user query and output schemas) using LangChain partial_variables.
+
+Generate Phase:
+
+Response Generation: Combines the retrieved records and the original query via a response prompt template to synthesize an informative, personalized recommendation.
+
+📂 Project Structure
+Plaintext
+├── database/
+│   └── hotels.db             # SQLite relational database containing hotel inventory & reservations
+├── pipeline/
+│   ├── rag_pipeline.py       # Main LangChain pipeline definitions
+│   └── utils.py              # SQL cleaning, validation, and DataFrame formatters
+├── README.md                 # Project documentation
+└── requirements.txt          # Python dependencies
+🚀 Getting Started
+Prerequisites
+Make sure you have Python 3.10+ installed along with the required libraries:
+
+Bash
+pip install langchain langchain-community pandas sqlalchemy
+Core Code Implementation
+Here is how the complete chain is structured and invoked:
+
+Python
+import pandas as pd
+from langchain.prompts import PromptTemplate
+from langchain_community.utilities import SQLDatabase
+
+# 1. Format database results for LLM consumption
+def format_results_for_llm(results_df: pd.DataFrame) -> str:
+    """Format query results for LLM consumption."""
+    if results_df.empty:
+        return "No results found"
+    return results_df.to_string(index=False)
+
+# 2. Define Response Generation Prompt
+generate_response_prompt_template_str = """
+Given the results of a hotel search and the original user query, create a user-friendly response following these guidelines:
+1. Start with a brief welcome acknowledging the search parameters
+2. Present each hotel with details, unique features, pricing, and availability
+3. End with a simple offer to provide more information
+
+Original User Query: {user_query}
+Hotel Search Results: {hotels_data}
+"""
+
+generate_response_prompt = PromptTemplate(
+    template=generate_response_prompt_template_str,
+    input_variables=["hotels_data"],
+    partial_variables={"user_query": user_query},
+)
+
+# 3. Assemble Chains
+generate_response = format_results_for_llm | generate_response_prompt | model
+
+# Complete Structured RAG Pipeline (Retrieval + Generation)
+structured_rag = retrieve_knowledge | generate_response
+
+# 4. Invoke Pipeline
+result = structured_rag.invoke({"user_query": user_query})
+print(result.text)
+🛡️ Security & Guardrails
+SQL Guardrails: The pipeline implements rigorous keyword checking (validate_sql) to protect against injection attacks and unintended modifications to underlying data storage.
+
+Date Context Injection: Injects runtime calendar variables to ensure temporal expressions (e.g., "next March") resolve accurately against historical or future records.
