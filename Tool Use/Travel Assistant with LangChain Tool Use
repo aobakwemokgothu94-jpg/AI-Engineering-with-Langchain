@@ -1,0 +1,69 @@
+Travel Assistant with LangChain Tool Use — Project README
+Overview
+This project implements an advanced Travel Assistant chatbot powered by LangChain and OpenAI chat models. The assistant combines custom Python function tools, precise mathematical calculators, pre-built LangChain community search integrations, and an autonomous serial execution loop to handle complex, multi-step travel planning workflows.
+
+Core Architecture & Features
+Dynamic Tool Binding: Binds custom tool schemas, signatures, and docstrings dynamically to the LLM using .bind_tools().
+
+Information Retrieval Integration: Utilizes DuckDuckGo search (langchain_community.tools.DuckDuckGoSearchResults) to fetch real-time public data regarding events, schedules, and landmarks.
+
+Capability Extension: Features custom Python tools for database queries (query_hotels) and precise financial calculations (calculate_total_cost) to bridge LLM capability gaps.
+
+Serial & Parallel Execution Loop: Features a resilient while True message execution loop that automatically processes sequential tool calls, feeds ToolMessage results back into the conversation context, and handles multi-turn reasoning steps until a final response is generated.
+
+Project Code Structure
+Python
+# Additional imports for LangChain tools
+from langchain_community.tools import DuckDuckGoSearchResults
+
+# Initialize DuckDuckGo search tool
+web_search = DuckDuckGoSearchResults(
+    name="web_search", output_format="list", num_results=5
+)
+
+class TravelAssistant:
+    def __init__(self):
+        self.llm = init_chat_model("gpt-6-luna", model_provider="openai")
+        self.tools = {
+            "web_search": web_search,
+            "query_hotels": query_hotels,
+            "calculate_total_cost": calculate_total_cost,
+        }
+        self.llm_with_tools = self.llm.bind_tools(self.tools.values())
+        self.messages = []
+        
+        current_year = datetime.now().year
+        self.system_prompt = f"""You are a helpful travel assistant that can search the web and find hotels. When users ask about events or locations, first use web_search to find current information. Then use query_hotels to find nearby accommodations. This allows you to handle queries about events, landmarks, or activities. Be conversational and helpful in your responses. Your current year is {current_year}."""
+        self.messages.append(SystemMessage(content=self.system_prompt))
+
+    def chat(self, message: str):
+        self.current_sequence = []
+        self.messages.append(HumanMessage(content=message))
+        
+        while True:
+            response = self.llm_with_tools.invoke(self.messages)
+            self.messages.append(response)
+            
+            if not response.tool_calls:
+                break
+                
+            for tool_call in response.tool_calls:
+                self.current_sequence.append(tool_call["name"])
+                tool = self.tools[tool_call["name"]]
+                tool_result = tool.invoke(tool_call)
+                self.messages.append(tool_result)
+                
+        self.tool_sequence = self.current_sequence
+Execution Flow & Workflow Example
+Step	Message Type	Action / Description
+1	Human Message	User inputs a complex query: "Find me a hotel in Tokyo in time to witness this year's Marathon"
+2	AI Message (Tool Call)	Model identifies a knowledge gap, extracts parameters, and calls web_search to verify the marathon date.
+3	Tool Message	DuckDuckGo returns current schedule data indicating the 2026 race has passed, prompting a second search for 2027.
+4	AI Message (Tool Call)	Model requests hotel accommodations via query_hotels using the resolved 2027 dates.
+5	Final AI Message	Model aggregates all tool outputs into a coherent, final response for the user.
+Setup & Usage Instructions
+Ensure required Python packages (langchain, langchain-community, openai) are installed in your environment.
+
+Configure your environment variables for OpenAI model access.
+
+Initialize the TravelAssistant class and execute chat sessions as demonstrated above.
